@@ -1,314 +1,193 @@
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import Slider
-from '@react-native-community/slider';
-
-import { useState }
-from 'react';
-
-import { MaterialIcons }
-from '@expo/vector-icons';
+// 🔄 Caminho corrigido para funcionar perfeitamente dentro da pasta src/screens/
+import { supabase } from '../lib/supabase';
 
 export default function Controle() {
+  const [alarme, setAlarme] = useState(false);
+  const [irrigacao, setIrrigacao] = useState(false);
+  const [ventilacao, setVentilacao] = useState(false);
+  const [sensibilidade, setSensibilidade] = useState(50);
+  const [loading, setLoading] = useState(true);
 
-  const [alarme, setAlarme] =
-    useState(false);
+  // 1. Busca o estado atual dos comandos salvos no Supabase assim que a tela abre
+  useEffect(() => {
+    async function carregarComandoseletronicos() {
+      try {
+        const { data, error } = await supabase
+          .from('controles')
+          .select('*')
+          .eq('id', 1) // Lê a linha fixa de controle
+          .single();
 
-  const [irrigacao, setIrrigacao] =
-    useState(false);
+        if (!error && data) {
+          setAlarme(data.alarme);
+          setIrrigacao(data.irrigacao);
+          setVentilacao(data.ventilacao);
+          setSensibilidade(data.sensibilidade);
+        }
+      } catch (err) {
+        console.log('Erro ao carregar comandos em nuvem.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    carregarComandoseletronicos();
+  }, []);
 
-  const [sensibilidade,
-    setSensibilidade] =
-    useState(50);
+  // 📡 2. Função unificada para atualizar a nuvem imediatamente após os cliques
+  async function enviarComandoNuvem(chave: string, valor: any) {
+    try {
+      const { error } = await supabase
+        .from('controles')
+        .update({ 
+          [chave]: valor,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
 
-  const [ventilacao,
-    setVentilacao] =
-    useState(false);
+      if (error) throw error;
+    } catch (err: any) {
+      Alert.alert('Erro de Conexão', 'Não foi possível sincronizar o comando com a nuvem.');
+    }
+  }
+
+  // Funções de clique que alteram a tela E salvam no Supabase
+  function alternarAlarme() {
+    const novoValor = !alarme;
+    setAlarme(novoValor);
+    enviarComandoNuvem('alarme', novoValor);
+  }
+
+  function alternarIrrigacao() {
+    const novoValor = !irrigacao;
+    setIrrigacao(novoValor);
+    enviarComandoNuvem('irrigacao', novoValor);
+  }
+
+  function alternarVentilacao() {
+    const novoValor = !ventilacao;
+    setVentilacao(novoValor);
+    enviarComandoNuvem('ventilacao', novoValor);
+  }
+
+  function alterarSensibilidade(valor: number) {
+    setSensibilidade(valor);
+    enviarComandoNuvem('sensibilidade', Math.round(valor));
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#22C55E" />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-
-      <Text style={styles.title}>
-        Controle Ambiental
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Central de prevenção de queimadas
-      </Text>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 120 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.title}>Controle Ambiental</Text>
+      <Text style={styles.subtitle}>Central de comando ativa em nuvem</Text>
 
       <View style={styles.iconContainer}>
-        <MaterialIcons
-          name="forest"
-          size={80}
-          color="#22C55E"
-        />
+        <MaterialIcons name="forest" size={80} color="#22C55E" />
       </View>
 
       <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>
-          Status do Sistema
-        </Text>
-
-        <Text style={styles.statusValue}>
-          🟢 OPERANDO NORMALMENTE
+        <Text style={styles.statusTitle}>Status do Hardware</Text>
+        <Text style={[styles.statusValue, { color: alarme || irrigacao || ventilacao ? '#FACC15' : '#22C55E' }]}>
+          {alarme || irrigacao || ventilacao ? '⚠️ TRANSMITINDO INTERVENÇÃO' : '🟢 SISTEMA ONLINE EM AGUARDO'}
         </Text>
       </View>
 
+      {/* BOTÃO ALARME */}
       <TouchableOpacity
-        style={[
-          styles.redButton,
-
-          {
-            backgroundColor: alarme
-              ? '#991B1B'
-              : '#DC2626',
-          },
-        ]}
-
-        onPress={() =>
-          setAlarme(!alarme)
-        }
+        style={[styles.button, { backgroundColor: alarme ? '#991B1B' : '#DC2626' }]}
+        onPress={alternarAlarme}
+        activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>
-          {alarme
-            ? '🔕 Desligar Alarme'
-            : '🚨 Ativar Alarme'}
+          {alarme ? '🔕 Desligar Alarme Físico' : '🚨 Ativar Alarme Físico'}
         </Text>
       </TouchableOpacity>
 
+      {/* BOTÃO IRRIGAÇÃO */}
       <TouchableOpacity
-        style={[
-          styles.greenButton,
-
-          {
-            backgroundColor: irrigacao
-              ? '#166534'
-              : '#16A34A',
-          },
-        ]}
-
-        onPress={() =>
-          setIrrigacao(!irrigacao)
-        }
+        style={[styles.button, { backgroundColor: irrigacao ? '#166534' : '#16A34A' }]}
+        onPress={alternarIrrigacao}
+        activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>
-          {irrigacao
-            ? '💧 Desligar Irrigação'
-            : '💧 Ativar Irrigação'}
+          {irrigacao ? '💧 Desligar Aspersores' : '💧 Ativar Irrigação Forçada'}
         </Text>
       </TouchableOpacity>
 
+      {/* BOTÃO VENTILAÇÃO */}
       <TouchableOpacity
-        style={[
-          styles.blueButton,
-
-          {
-            backgroundColor: ventilacao
-              ? '#1D4ED8'
-              : '#2563EB',
-          },
-        ]}
-
-        onPress={() =>
-          setVentilacao(!ventilacao)
-        }
+        style={[styles.button, { backgroundColor: ventilacao ? '#1D4ED8' : '#2563EB' }]}
+        onPress={alternarVentilacao}
+        activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>
-          {ventilacao
-            ? '🌬 Desligar Ventilação'
-            : '🌬 Ativar Ventilação'}
+          {ventilacao ? '🌬 Desligar Exaustores' : '🌬 Ativar Ventilação Manual'}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.emergency}
-      >
-        <Text style={styles.buttonText}>
-          🚨 MODO EMERGÊNCIA
-        </Text>
-      </TouchableOpacity>
-
+      {/* CONTROLE DE SENSIBILIDADE */}
       <View style={styles.sliderContainer}>
-
-        <Text style={styles.sliderText}>
-          Sensibilidade do Sensor
-        </Text>
-
+        <Text style={styles.sliderText}>Sensibilidade do Sensor Arduino</Text>
         <Slider
-          minimumValue={0}
+          minimumValue={10}
           maximumValue={100}
-
           minimumTrackTintColor="#22C55E"
           maximumTrackTintColor="#475569"
-
           thumbTintColor="#22C55E"
-
           value={sensibilidade}
-
-          onValueChange={(value) =>
-            setSensibilidade(value)
-          }
+          onSlidingComplete={alterarSensibilidade}
         />
-
-        <Text style={styles.value}>
-          {sensibilidade.toFixed(0)}%
-        </Text>
-
+        <Text style={styles.value}>{sensibilidade.toFixed(0)}%</Text>
       </View>
 
+      {/* CARD INFORMATIVO */}
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>
-          Informações do Sistema
-        </Text>
-
-        <Text style={styles.infoText}>
-          • Sensores ativos: 4
-        </Text>
-
-        <Text style={styles.infoText}>
-          • Última fumaça detectada: 14:32
-        </Text>
-
-        <Text style={styles.infoText}>
-          • Área monitorada: 2.4 km²
-        </Text>
-
-        <Text style={styles.infoText}>
-          • Nível atual de risco: ALTO
-        </Text>
+        <Text style={styles.infoTitle}>Integração IoT EcoGuard</Text>
+        <Text style={styles.infoText}>• Conexão ativa com o banco Supabase</Text>
+        <Text style={styles.infoText}>• Resposta do hardware estimada em: 2 segundos</Text>
+        <Text style={styles.infoText}>• Comandos prontos para acionamento de Relés</Text>
       </View>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#020617',
-    padding: 20,
-  },
-
-  title: {
-    color: '#22C55E',
-    fontSize: 38,
-    fontWeight: 'bold',
-    marginTop: 60,
-  },
-
-  subtitle: {
-    color: '#CBD5E1',
-    fontSize: 18,
-    marginTop: 10,
-    marginBottom: 25,
-  },
-
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-
-  statusCard: {
-    backgroundColor: '#1E293B',
-    padding: 22,
-    borderRadius: 22,
-    marginBottom: 25,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-
-  statusTitle: {
-    color: '#CBD5E1',
-    fontSize: 18,
-  },
-
-  statusValue: {
-    color: '#22C55E',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-
-  redButton: {
-    padding: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-
-  greenButton: {
-    padding: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-
-  blueButton: {
-    padding: 18,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-
-  emergency: {
-    backgroundColor: '#7F1D1D',
-    padding: 22,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 30,
-    borderWidth: 2,
-    borderColor: '#EF4444',
-  },
-
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-
-  sliderContainer: {
-    backgroundColor: '#1E293B',
-    padding: 22,
-    borderRadius: 22,
-    marginBottom: 25,
-  },
-
-  sliderText: {
-    color: '#CBD5E1',
-    fontSize: 18,
-  },
-
-  value: {
-    color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-
-  infoCard: {
-    backgroundColor: '#1E293B',
-    padding: 22,
-    borderRadius: 22,
-    marginBottom: 50,
-  },
-
-  infoTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-
-  infoText: {
-    color: '#CBD5E1',
-    fontSize: 16,
-    marginBottom: 10,
-  },
+  container: { flex: 1, backgroundColor: '#020617', padding: 20 },
+  title: { color: '#22C55E', fontSize: 34, fontWeight: 'bold', marginTop: 70 },
+  subtitle: { color: '#CBD5E1', fontSize: 16, marginTop: 5, marginBottom: 25 },
+  iconContainer: { alignItems: 'center', marginBottom: 25 },
+  statusCard: { backgroundColor: '#1E293B', padding: 20, borderRadius: 22, marginBottom: 25, borderWidth: 1, borderColor: '#334155' },
+  statusTitle: { color: '#CBD5E1', fontSize: 16 },
+  statusValue: { fontSize: 18, fontWeight: 'bold', marginTop: 8 },
+  button: { padding: 18, borderRadius: 20, alignItems: 'center', marginBottom: 15 },
+  buttonText: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
+  sliderContainer: { backgroundColor: '#1E293B', padding: 22, borderRadius: 22, marginBottom: 25, marginTop: 10 },
+  sliderText: { color: '#CBD5E1', fontSize: 16 },
+  value: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginTop: 8 },
+  infoCard: { backgroundColor: '#1E293B', padding: 22, borderRadius: 22 },
+  infoTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  infoText: { color: '#CBD5E1', fontSize: 15, marginBottom: 10 },
 });
