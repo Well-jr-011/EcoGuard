@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  useWindowDimensions,
 } from 'react-native';
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -22,16 +24,13 @@ import { supabase } from '../src/lib/supabase';
 
 
 // ======================================================
-// CHAVES DO STORAGE
+// STORAGE
 // ======================================================
 
 const STORAGE = {
   nome: '@EcoGuard:nome',
   telefone: '@EcoGuard:telefone',
-  email: '@EcoGuard:email',
   notificacaoApp: '@EcoGuard:notificacaoApp',
-  notificacaoEmail: '@EcoGuard:notificacaoEmail',
-  notificacaoSms: '@EcoGuard:notificacaoSms',
 };
 
 
@@ -40,21 +39,26 @@ const STORAGE = {
 // ======================================================
 
 export default function Configuracoes() {
+  const { width } = useWindowDimensions();
+
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [email, setEmail] = useState('');
 
-  const [notificacaoApp, setNotificacaoApp] = useState(true);
-  const [notificacaoEmail, setNotificacaoEmail] = useState(true);
-  const [notificacaoSms, setNotificacaoSms] = useState(false);
+  const [notificacaoApp, setNotificacaoApp] =
+    useState(true);
 
-  const [carregando, setCarregando] = useState(true);
-  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [salvando, setSalvando] =
+    useState(false);
+
+  const isDesktop = width >= 900;
 
 
-  // ======================================================
-  // CARREGAR DADOS
-  // ======================================================
+  // ====================================================
+  // CARREGAR
+  // ====================================================
 
   useEffect(() => {
     carregarDados();
@@ -68,45 +72,21 @@ export default function Configuracoes() {
       const [
         nomeSalvo,
         telefoneSalvo,
-        emailSalvo,
-        appSalvo,
-        emailNotificacaoSalvo,
-        smsSalvo,
+        notificacaoSalva,
       ] = await Promise.all([
         AsyncStorage.getItem(STORAGE.nome),
         AsyncStorage.getItem(STORAGE.telefone),
-        AsyncStorage.getItem(STORAGE.email),
-        AsyncStorage.getItem(STORAGE.notificacaoApp),
-        AsyncStorage.getItem(STORAGE.notificacaoEmail),
-        AsyncStorage.getItem(STORAGE.notificacaoSms),
+        AsyncStorage.getItem(
+          STORAGE.notificacaoApp
+        ),
       ]);
 
+      setNome(nomeSalvo || '');
+      setTelefone(telefoneSalvo || '');
 
-      if (nomeSalvo !== null) {
-        setNome(nomeSalvo);
-      }
-
-      if (telefoneSalvo !== null) {
-        setTelefone(telefoneSalvo);
-      }
-
-      if (emailSalvo !== null) {
-        setEmail(emailSalvo);
-      }
-
-      if (appSalvo !== null) {
-        setNotificacaoApp(appSalvo === 'true');
-      }
-
-      if (emailNotificacaoSalvo !== null) {
-        setNotificacaoEmail(
-          emailNotificacaoSalvo === 'true'
-        );
-      }
-
-      if (smsSalvo !== null) {
-        setNotificacaoSms(
-          smsSalvo === 'true'
+      if (notificacaoSalva !== null) {
+        setNotificacaoApp(
+          notificacaoSalva === 'true'
         );
       }
 
@@ -127,106 +107,37 @@ export default function Configuracoes() {
   }
 
 
-  // ======================================================
-  // SALVAR LOCALMENTE
-  // ======================================================
-
-  async function salvarLocalmente() {
-    await Promise.all([
-      AsyncStorage.setItem(
-        STORAGE.nome,
-        nome.trim()
-      ),
-
-      AsyncStorage.setItem(
-        STORAGE.telefone,
-        telefone.trim()
-      ),
-
-      AsyncStorage.setItem(
-        STORAGE.email,
-        email.trim()
-      ),
-
-      AsyncStorage.setItem(
-        STORAGE.notificacaoApp,
-        String(notificacaoApp)
-      ),
-
-      AsyncStorage.setItem(
-        STORAGE.notificacaoEmail,
-        String(notificacaoEmail)
-      ),
-
-      AsyncStorage.setItem(
-        STORAGE.notificacaoSms,
-        String(notificacaoSms)
-      ),
-    ]);
-  }
-
-
-  // ======================================================
-  // SALVAR CONFIGURAÇÕES
-  // ======================================================
+  // ====================================================
+  // SALVAR
+  // ====================================================
 
   async function salvarConfiguracoes() {
-
     const nomeLimpo = nome.trim();
     const telefoneLimpo = telefone.trim();
-    const emailLimpo = email.trim().toLowerCase();
-
-
-    // ------------------------------
-    // VALIDAÇÕES
-    // ------------------------------
 
     if (!nomeLimpo) {
       Alert.alert(
-        'Nome obrigatório',
-        'Digite seu nome completo.'
+        'Nome necessário',
+        'Digite seu nome para continuar.'
       );
       return;
     }
-
 
     if (!telefoneLimpo) {
       Alert.alert(
-        'Telefone obrigatório',
-        'Digite um telefone de emergência.'
+        'Telefone necessário',
+        'Digite um telefone para receber alertas e usar em emergências.'
       );
       return;
     }
-
-
-    if (!emailLimpo) {
-      Alert.alert(
-        'E-mail obrigatório',
-        'Digite seu e-mail.'
-      );
-      return;
-    }
-
-
-    if (
-      !emailLimpo.includes('@') ||
-      !emailLimpo.includes('.')
-    ) {
-      Alert.alert(
-        'E-mail inválido',
-        'Digite um endereço de e-mail válido.'
-      );
-      return;
-    }
-
 
     try {
       setSalvando(true);
 
 
-      // ==================================================
-      // SALVA PRIMEIRO NO CELULAR
-      // ==================================================
+      // -----------------------------------------------
+      // SALVA NO CELULAR
+      // -----------------------------------------------
 
       await Promise.all([
         AsyncStorage.setItem(
@@ -240,84 +151,75 @@ export default function Configuracoes() {
         ),
 
         AsyncStorage.setItem(
-          STORAGE.email,
-          emailLimpo
-        ),
-
-        AsyncStorage.setItem(
           STORAGE.notificacaoApp,
           String(notificacaoApp)
-        ),
-
-        AsyncStorage.setItem(
-          STORAGE.notificacaoEmail,
-          String(notificacaoEmail)
-        ),
-
-        AsyncStorage.setItem(
-          STORAGE.notificacaoSms,
-          String(notificacaoSms)
         ),
       ]);
 
 
-      // ==================================================
+      // -----------------------------------------------
       // TENTA SALVAR NO SUPABASE
-      // ==================================================
+      // -----------------------------------------------
 
-      const { error } = await supabase
-        .from('usuarios')
-        .insert([
-          {
-            nome: nomeLimpo,
-            email: emailLimpo,
-            telefone: telefoneLimpo,
-            notificacao_app: notificacaoApp,
-            notificacao_email: notificacaoEmail,
-            notificacao_sms: notificacaoSms,
-          },
-        ]);
+      const {
+        data: usuarioAtual,
+        error: erroUsuario,
+      } = await supabase.auth.getUser();
 
 
-      // ==================================================
-      // SUPABASE DEU ERRO
-      // ==================================================
+      if (
+        !erroUsuario &&
+        usuarioAtual?.user
+      ) {
+        const userId = usuarioAtual.user.id;
 
-      if (error) {
-        console.log(
-          'Erro Supabase:',
-          error
-        );
+        const { data: usuarioExistente } =
+          await supabase
+            .from('usuarios')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle();
 
-        // Os dados locais continuam salvos.
-        Alert.alert(
-          'Salvo no dispositivo',
-          'Suas configurações foram salvas neste aparelho. Não foi possível sincronizar com o banco de dados.'
-        );
 
-        return;
+        if (usuarioExistente) {
+
+          await supabase
+            .from('usuarios')
+            .update({
+              nome: nomeLimpo,
+              telefone: telefoneLimpo,
+            })
+            .eq('id', userId);
+
+        } else {
+
+          await supabase
+            .from('usuarios')
+            .insert({
+              id: userId,
+              nome: nomeLimpo,
+              telefone: telefoneLimpo,
+            });
+        }
       }
 
 
-      // ==================================================
-      // SUCESSO COMPLETO
-      // ==================================================
-
       Alert.alert(
         'Tudo certo! 🌿',
-        'Perfil e preferências salvos com sucesso.'
+        'Suas configurações foram salvas.'
       );
 
     } catch (error) {
-
       console.log(
         'Erro ao salvar configurações:',
         error
       );
 
+      // Mesmo que o banco falhe,
+      // os dados já foram salvos no celular.
       Alert.alert(
         'Configurações salvas',
-        'Os dados foram salvos localmente no dispositivo.'
+        'Seus dados foram salvos neste dispositivo.'
       );
 
     } finally {
@@ -326,65 +228,69 @@ export default function Configuracoes() {
   }
 
 
-  // ======================================================
-  // LIMPAR CONFIGURAÇÕES
-  // ======================================================
+  // ====================================================
+  // ALTERAR NOTIFICAÇÕES
+  // ====================================================
 
-  function limparConfiguracoes() {
+  async function alterarNotificacoes(
+    valor: boolean
+  ) {
+    try {
+      setNotificacaoApp(valor);
 
+      await AsyncStorage.setItem(
+        STORAGE.notificacaoApp,
+        String(valor)
+      );
+
+    } catch (error) {
+      console.log(
+        'Erro ao salvar preferência:',
+        error
+      );
+    }
+  }
+
+
+  // ====================================================
+  // TELEFONE
+  // ====================================================
+
+  function formatarTelefone(texto: string) {
+    const numeros = texto.replace(/\D/g, '');
+
+    if (numeros.length <= 10) {
+      return numeros.replace(
+        /^(\d{2})(\d{4})(\d{0,4}).*/,
+        '($1) $2-$3'
+      );
+    }
+
+    return numeros.replace(
+      /^(\d{2})(\d{5})(\d{0,4}).*/,
+      '($1) $2-$3'
+    );
+  }
+
+
+  // ====================================================
+  // EMERGÊNCIA
+  // ====================================================
+
+  function ligar193() {
     Alert.alert(
-      'Limpar configurações',
-      'Isso apagará nome, telefone, e-mail e preferências salvas neste aparelho.',
+      'Emergência',
+      'Deseja ligar para os Bombeiros?',
       [
         {
           text: 'Cancelar',
           style: 'cancel',
         },
-
         {
-          text: 'Limpar',
+          text: 'Ligar 193',
           style: 'destructive',
-
-          onPress: async () => {
-
-            try {
-
-              await AsyncStorage.multiRemove([
-                STORAGE.nome,
-                STORAGE.telefone,
-                STORAGE.email,
-                STORAGE.notificacaoApp,
-                STORAGE.notificacaoEmail,
-                STORAGE.notificacaoSms,
-              ]);
-
-
-              setNome('');
-              setTelefone('');
-              setEmail('');
-
-              setNotificacaoApp(true);
-              setNotificacaoEmail(true);
-              setNotificacaoSms(false);
-
-
-              Alert.alert(
-                'Configurações limpas',
-                'Os dados locais do EcoGuard foram removidos.'
-              );
-
-            } catch (error) {
-
-              console.log(
-                'Erro ao limpar:',
-                error
-              );
-
-              Alert.alert(
-                'Erro',
-                'Não foi possível limpar as configurações.'
-              );
-            }
+          onPress: () => {
+            Linking.openURL('tel:193');
           },
         },
       ]
@@ -392,9 +298,9 @@ export default function Configuracoes() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // LOADING
-  // ======================================================
+  // ====================================================
 
   if (carregando) {
     return (
@@ -429,9 +335,9 @@ export default function Configuracoes() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // INTERFACE
-  // ======================================================
+  // ====================================================
 
   return (
     <KeyboardAvoidingView
@@ -445,407 +351,30 @@ export default function Configuracoes() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{
-          paddingBottom: 140,
-        }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isDesktop && styles.scrollDesktop,
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* ============================================= */}
-        {/* HEADER */}
-        {/* ============================================= */}
-
-        <LinearGradient
-          colors={[
-            '#064E3B',
-            '#052E16',
-            '#030712',
+        <View
+          style={[
+            styles.content,
+            isDesktop && styles.contentDesktop,
           ]}
-          start={{
-            x: 0,
-            y: 0,
-          }}
-          end={{
-            x: 1,
-            y: 1,
-          }}
-          style={styles.header}
         >
 
-          <View style={styles.headerIcon}>
-            <MaterialIcons
-              name="settings"
-              size={28}
-              color="#86EFAC"
-            />
-          </View>
-
-          <Text style={styles.headerTitle}>
-            Configurações
-          </Text>
-
-          <Text style={styles.headerSubtitle}>
-            Personalize seu EcoGuard
-          </Text>
-
-        </LinearGradient>
-
-
-        {/* ============================================= */}
-        {/* PERFIL */}
-        {/* ============================================= */}
-
-        <View style={styles.sectionHeader}>
-
-          <View style={styles.sectionIcon}>
-            <MaterialIcons
-              name="person"
-              size={19}
-              color="#22C55E"
-            />
-          </View>
-
-          <View>
-            <Text style={styles.sectionTitle}>
-              Seu perfil
-            </Text>
-
-            <Text style={styles.sectionSubtitle}>
-              Dados usados nos alertas
-            </Text>
-          </View>
-
-        </View>
-
-
-        <View style={styles.card}>
-
-          {/* NOME */}
-
-          <View style={styles.inputContainer}>
-
-            <View style={styles.inputIcon}>
-              <MaterialIcons
-                name="person-outline"
-                size={21}
-                color="#22C55E"
-              />
-            </View>
-
-            <View style={styles.inputContent}>
-
-              <Text style={styles.inputLabel}>
-                NOME
-              </Text>
-
-              <TextInput
-                value={nome}
-                onChangeText={setNome}
-                placeholder="Seu nome completo"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                autoCapitalize="words"
-              />
-
-            </View>
-
-          </View>
-
-
-          {/* TELEFONE */}
-
-          <View style={styles.inputContainer}>
-
-            <View
-              style={[
-                styles.inputIcon,
-                {
-                  backgroundColor:
-                    'rgba(59,130,246,0.10)',
-                },
-              ]}
-            >
-              <MaterialIcons
-                name="phone"
-                size={21}
-                color="#60A5FA"
-              />
-            </View>
-
-            <View style={styles.inputContent}>
-
-              <Text style={styles.inputLabel}>
-                TELEFONE DE EMERGÊNCIA
-              </Text>
-
-              <TextInput
-                value={telefone}
-                onChangeText={setTelefone}
-                placeholder="(11) 99999-9999"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                keyboardType="phone-pad"
-              />
-
-            </View>
-
-          </View>
-
-
-          {/* EMAIL */}
-
-          <View
-            style={[
-              styles.inputContainer,
-              {
-                borderBottomWidth: 0,
-                paddingBottom: 0,
-              },
-            ]}
-          >
-
-            <View
-              style={[
-                styles.inputIcon,
-                {
-                  backgroundColor:
-                    'rgba(168,85,247,0.10)',
-                },
-              ]}
-            >
-              <MaterialIcons
-                name="email"
-                size={21}
-                color="#C084FC"
-              />
-            </View>
-
-            <View style={styles.inputContent}>
-
-              <Text style={styles.inputLabel}>
-                E-MAIL
-              </Text>
-
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="seu@email.com"
-                placeholderTextColor="#475569"
-                style={styles.input}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-
-            </View>
-
-          </View>
-
-        </View>
-
-
-        {/* ============================================= */}
-        {/* NOTIFICAÇÕES */}
-        {/* ============================================= */}
-
-        <View style={styles.sectionHeader}>
-
-          <View
-            style={[
-              styles.sectionIcon,
-              {
-                backgroundColor:
-                  'rgba(59,130,246,0.10)',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name="notifications-none"
-              size={20}
-              color="#60A5FA"
-            />
-          </View>
-
-          <View>
-            <Text style={styles.sectionTitle}>
-              Notificações
-            </Text>
-
-            <Text style={styles.sectionSubtitle}>
-              Escolha como receber alertas
-            </Text>
-          </View>
-
-        </View>
-
-
-        <View style={styles.card}>
-
-          {/* APP */}
-
-          <View style={styles.notificationRow}>
-
-            <View style={styles.notificationIcon}>
-              <MaterialIcons
-                name="smartphone"
-                size={21}
-                color="#22C55E"
-              />
-            </View>
-
-            <View style={styles.notificationText}>
-
-              <Text style={styles.notificationTitle}>
-                Notificações no app
-              </Text>
-
-              <Text style={styles.notificationDescription}>
-                Alertas importantes do EcoGuard
-              </Text>
-
-            </View>
-
-            <Switch
-              value={notificacaoApp}
-              onValueChange={setNotificacaoApp}
-              trackColor={{
-                false: '#1E293B',
-                true: '#166534',
-              }}
-              thumbColor={
-                notificacaoApp
-                  ? '#22C55E'
-                  : '#64748B'
-              }
-            />
-
-          </View>
-
-
-          {/* EMAIL */}
-
-          <View style={styles.notificationRow}>
-
-            <View
-              style={[
-                styles.notificationIcon,
-                {
-                  backgroundColor:
-                    'rgba(168,85,247,0.10)',
-                },
-              ]}
-            >
-              <MaterialIcons
-                name="email"
-                size={21}
-                color="#C084FC"
-              />
-            </View>
-
-            <View style={styles.notificationText}>
-
-              <Text style={styles.notificationTitle}>
-                Alertas por e-mail
-              </Text>
-
-              <Text style={styles.notificationDescription}>
-                Receba alertas no seu e-mail
-              </Text>
-
-            </View>
-
-            <Switch
-              value={notificacaoEmail}
-              onValueChange={setNotificacaoEmail}
-              trackColor={{
-                false: '#1E293B',
-                true: '#166534',
-              }}
-              thumbColor={
-                notificacaoEmail
-                  ? '#22C55E'
-                  : '#64748B'
-              }
-            />
-
-          </View>
-
-
-          {/* SMS */}
-
-          <View
-            style={[
-              styles.notificationRow,
-              {
-                borderBottomWidth: 0,
-                paddingBottom: 0,
-              },
-            ]}
-          >
-
-            <View
-              style={[
-                styles.notificationIcon,
-                {
-                  backgroundColor:
-                    'rgba(245,158,11,0.10)',
-                },
-              ]}
-            >
-              <MaterialIcons
-                name="sms"
-                size={21}
-                color="#FBBF24"
-              />
-            </View>
-
-            <View style={styles.notificationText}>
-
-              <Text style={styles.notificationTitle}>
-                SMS
-              </Text>
-
-              <Text style={styles.notificationDescription}>
-                Alertas via mensagem de texto
-              </Text>
-
-            </View>
-
-            <Switch
-              value={notificacaoSms}
-              onValueChange={setNotificacaoSms}
-              trackColor={{
-                false: '#1E293B',
-                true: '#166534',
-              }}
-              thumbColor={
-                notificacaoSms
-                  ? '#22C55E'
-                  : '#64748B'
-              }
-            />
-
-          </View>
-
-        </View>
-
-
-        {/* ============================================= */}
-        {/* BOTÃO SALVAR */}
-        {/* ============================================= */}
-
-        <TouchableOpacity
-          onPress={salvarConfiguracoes}
-          disabled={salvando}
-          activeOpacity={0.85}
-          style={styles.saveButtonWrapper}
-        >
+          {/* ==========================================
+              CABEÇALHO
+          ========================================== */}
 
           <LinearGradient
             colors={[
-              '#22C55E',
-              '#16A34A',
+              '#064E3B',
+              '#052E16',
+              '#030712',
             ]}
             start={{
               x: 0,
@@ -853,104 +382,378 @@ export default function Configuracoes() {
             }}
             end={{
               x: 1,
-              y: 0,
+              y: 1,
             }}
-            style={styles.saveButton}
+            style={styles.header}
           >
 
-            {salvando ? (
-              <ActivityIndicator
-                size="small"
-                color="#FFFFFF"
+            <View style={styles.headerIcon}>
+              <MaterialIcons
+                name="settings"
+                size={29}
+                color="#86EFAC"
               />
-            ) : (
-              <>
-                <MaterialIcons
-                  name="save"
-                  size={21}
-                  color="#FFFFFF"
-                />
+            </View>
 
-                <Text style={styles.saveButtonText}>
-                  SALVAR CONFIGURAÇÕES
-                </Text>
-              </>
-            )}
+            <Text style={styles.headerTitle}>
+              Configurações
+            </Text>
+
+            <Text style={styles.headerSubtitle}>
+              Deixe o EcoGuard do seu jeito
+            </Text>
 
           </LinearGradient>
 
-        </TouchableOpacity>
 
+          {/* ==========================================
+              PERFIL
+          ========================================== */}
 
-        {/* ============================================= */}
-        {/* EMERGÊNCIA */}
-        {/* ============================================= */}
+          <View style={styles.sectionHeader}>
 
-        <View style={styles.emergencyCard}>
+            <View style={styles.sectionIcon}>
+              <MaterialIcons
+                name="person"
+                size={20}
+                color="#22C55E"
+              />
+            </View>
 
-          <View style={styles.emergencyIcon}>
-            <MaterialIcons
-              name="local-fire-department"
-              size={25}
-              color="#EF4444"
-            />
-          </View>
+            <View>
+              <Text style={styles.sectionTitle}>
+                Meu perfil
+              </Text>
 
-          <View style={styles.emergencyContent}>
-
-            <Text style={styles.emergencyTitle}>
-              Emergência
-            </Text>
-
-            <Text style={styles.emergencyText}>
-              Em caso de incêndio, ligue para os Bombeiros.
-            </Text>
-
-            <Text style={styles.emergencyNumber}>
-              193
-            </Text>
+              <Text style={styles.sectionSubtitle}>
+                Informações para os alertas
+              </Text>
+            </View>
 
           </View>
 
-        </View>
+
+          <View style={styles.card}>
+
+            {/* NOME */}
+
+            <View style={styles.inputRow}>
+
+              <View style={styles.inputIcon}>
+                <MaterialIcons
+                  name="person-outline"
+                  size={21}
+                  color="#22C55E"
+                />
+              </View>
+
+              <View style={styles.inputContent}>
+
+                <Text style={styles.inputLabel}>
+                  NOME
+                </Text>
+
+                <TextInput
+                  value={nome}
+                  onChangeText={setNome}
+                  placeholder="Seu nome"
+                  placeholderTextColor="#475569"
+                  style={styles.input}
+                  autoCapitalize="words"
+                />
+
+              </View>
+
+            </View>
 
 
-        {/* ============================================= */}
-        {/* LIMPAR */}
-        {/* ============================================= */}
+            {/* TELEFONE */}
 
-        <TouchableOpacity
-          onPress={limparConfiguracoes}
-          activeOpacity={0.8}
-          style={styles.clearButton}
-        >
+            <View
+              style={[
+                styles.inputRow,
+                styles.lastInputRow,
+              ]}
+            >
 
-          <MaterialIcons
-            name="delete-outline"
-            size={20}
-            color="#EF4444"
-          />
+              <View
+                style={[
+                  styles.inputIcon,
+                  styles.blueIcon,
+                ]}
+              >
+                <MaterialIcons
+                  name="phone"
+                  size={21}
+                  color="#60A5FA"
+                />
+              </View>
 
-          <Text style={styles.clearButtonText}>
-            LIMPAR DADOS DO DISPOSITIVO
-          </Text>
+              <View style={styles.inputContent}>
 
-        </TouchableOpacity>
+                <Text style={styles.inputLabel}>
+                  TELEFONE
+                </Text>
+
+                <TextInput
+                  value={telefone}
+                  onChangeText={(texto) =>
+                    setTelefone(
+                      formatarTelefone(texto)
+                    )
+                  }
+                  placeholder="(11) 99999-9999"
+                  placeholderTextColor="#475569"
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                />
+
+              </View>
+
+            </View>
+
+          </View>
 
 
-        {/* ============================================= */}
-        {/* RODAPÉ */}
-        {/* ============================================= */}
+          {/* ==========================================
+              ALERTAS
+          ========================================== */}
 
-        <View style={styles.footer}>
+          <View style={styles.sectionHeader}>
 
-          <MaterialIcons
-            name="eco"
-            size={18}
-            color="#22C55E"
-          />
+            <View
+              style={[
+                styles.sectionIcon,
+                styles.blueSectionIcon,
+              ]}
+            >
+              <MaterialIcons
+                name="notifications"
+                size={20}
+                color="#60A5FA"
+              />
+            </View>
 
-          <Text style={styles.footerText}>
+            <View>
+              <Text style={styles.sectionTitle}>
+                Alertas
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                Controle os avisos do EcoGuard
+              </Text>
+            </View>
+
+          </View>
+
+
+          <View style={styles.card}>
+
+            <View style={styles.alertRow}>
+
+              <View style={styles.alertIcon}>
+                <MaterialIcons
+                  name="notifications-active"
+                  size={22}
+                  color="#60A5FA"
+                />
+              </View>
+
+              <View style={styles.alertText}>
+
+                <Text style={styles.alertTitle}>
+                  Notificações do aplicativo
+                </Text>
+
+                <Text style={styles.alertDescription}>
+                  Receba avisos quando houver risco
+                </Text>
+
+              </View>
+
+              <Switch
+                value={notificacaoApp}
+                onValueChange={
+                  alterarNotificacoes
+                }
+                trackColor={{
+                  false: '#1E293B',
+                  true: '#166534',
+                }}
+                thumbColor={
+                  notificacaoApp
+                    ? '#22C55E'
+                    : '#64748B'
+                }
+              />
+
+            </View>
+
+          </View>
+
+
+          {/* ==========================================
+              BOTÃO SALVAR
+          ========================================== */}
+
+          <TouchableOpacity
+            style={styles.saveWrapper}
+            onPress={salvarConfiguracoes}
+            disabled={salvando}
+            activeOpacity={0.85}
+          >
+
+            <LinearGradient
+              colors={[
+                '#22C55E',
+                '#16A34A',
+              ]}
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 0,
+              }}
+              style={styles.saveButton}
+            >
+
+              {salvando ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#FFFFFF"
+                />
+              ) : (
+                <>
+                  <MaterialIcons
+                    name="check-circle"
+                    size={21}
+                    color="#FFFFFF"
+                  />
+
+                  <Text style={styles.saveText}>
+                    SALVAR ALTERAÇÕES
+                  </Text>
+                </>
+              )}
+
+            </LinearGradient>
+
+          </TouchableOpacity>
+
+
+          {/* ==========================================
+              EMERGÊNCIA
+          ========================================== */}
+
+          <View style={styles.sectionHeader}>
+
+            <View
+              style={[
+                styles.sectionIcon,
+                styles.redSectionIcon,
+              ]}
+            >
+              <MaterialIcons
+                name="local-fire-department"
+                size={20}
+                color="#EF4444"
+              />
+            </View>
+
+            <View>
+              <Text style={styles.sectionTitle}>
+                Emergência
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                Ação rápida em caso de incêndio
+              </Text>
+            </View>
+
+          </View>
+
+
+          <TouchableOpacity
+            style={styles.emergencyCard}
+            onPress={ligar193}
+            activeOpacity={0.85}
+          >
+
+            <View style={styles.emergencyIcon}>
+              <MaterialIcons
+                name="phone"
+                size={25}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View style={styles.emergencyTextContainer}>
+
+              <Text style={styles.emergencyTitle}>
+                Bombeiros
+              </Text>
+
+              <Text style={styles.emergencyDescription}>
+                Ligue imediatamente em caso de incêndio
+              </Text>
+
+            </View>
+
+            <View style={styles.numberContainer}>
+
+              <Text style={styles.number}>
+                193
+              </Text>
+
+              <MaterialIcons
+                name="chevron-right"
+                size={22}
+                color="#EF4444"
+              />
+
+            </View>
+
+          </TouchableOpacity>
+
+
+          {/* ==========================================
+              SOBRE
+          ========================================== */}
+
+          <View style={styles.aboutCard}>
+
+            <View style={styles.aboutIcon}>
+              <MaterialIcons
+                name="eco"
+                size={22}
+                color="#22C55E"
+              />
+            </View>
+
+            <View style={styles.aboutContent}>
+
+              <Text style={styles.aboutTitle}>
+                EcoGuard
+              </Text>
+
+              <Text style={styles.aboutText}>
+                Monitoramento inteligente para prevenção
+                de queimadas e proteção ambiental.
+              </Text>
+
+            </View>
+
+          </View>
+
+
+          {/* ==========================================
+              RODAPÉ
+          ========================================== */}
+
+          <Text style={styles.footer}>
             EcoGuard • Monitoramento inteligente
           </Text>
 
@@ -974,6 +777,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#030712',
   },
 
+  scrollContent: {
+    paddingBottom: 130,
+  },
+
+  scrollDesktop: {
+    alignItems: 'center',
+  },
+
+  content: {
+    width: '100%',
+  },
+
+  contentDesktop: {
+    maxWidth: 900,
+  },
+
 
   // ====================================================
   // LOADING
@@ -990,9 +809,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 23,
-    backgroundColor: 'rgba(34,197,94,0.10)',
+    backgroundColor:
+      'rgba(34,197,94,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.25)',
+    borderColor:
+      'rgba(34,197,94,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1024,12 +845,14 @@ const styles = StyleSheet.create({
   },
 
   headerIcon: {
-    width: 54,
-    height: 54,
+    width: 55,
+    height: 55,
     borderRadius: 18,
-    backgroundColor: 'rgba(34,197,94,0.10)',
+    backgroundColor:
+      'rgba(34,197,94,0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(134,239,172,0.18)',
+    borderColor:
+      'rgba(134,239,172,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 17,
@@ -1062,13 +885,24 @@ const styles = StyleSheet.create({
   },
 
   sectionIcon: {
-    width: 39,
-    height: 39,
+    width: 40,
+    height: 40,
     borderRadius: 13,
-    backgroundColor: 'rgba(34,197,94,0.10)',
+    backgroundColor:
+      'rgba(34,197,94,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
+  },
+
+  blueSectionIcon: {
+    backgroundColor:
+      'rgba(59,130,246,0.10)',
+  },
+
+  redSectionIcon: {
+    backgroundColor:
+      'rgba(239,68,68,0.10)',
   },
 
   sectionTitle: {
@@ -1093,17 +927,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B1220',
     borderRadius: 22,
     paddingHorizontal: 16,
-    paddingVertical: 4,
     borderWidth: 1,
     borderColor: '#172033',
   },
 
 
   // ====================================================
-  // INPUT
+  // INPUTS
   // ====================================================
 
-  inputContainer: {
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
@@ -1111,14 +944,24 @@ const styles = StyleSheet.create({
     borderBottomColor: '#172033',
   },
 
+  lastInputRow: {
+    borderBottomWidth: 0,
+  },
+
   inputIcon: {
-    width: 42,
-    height: 42,
+    width: 43,
+    height: 43,
     borderRadius: 14,
-    backgroundColor: 'rgba(34,197,94,0.10)',
+    backgroundColor:
+      'rgba(34,197,94,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+  },
+
+  blueIcon: {
+    backgroundColor:
+      'rgba(59,130,246,0.10)',
   },
 
   inputContent: {
@@ -1141,41 +984,40 @@ const styles = StyleSheet.create({
 
 
   // ====================================================
-  // NOTIFICAÇÕES
+  // ALERTAS
   // ====================================================
 
-  notificationRow: {
-    minHeight: 76,
+  alertRow: {
+    minHeight: 84,
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#172033',
   },
 
-  notificationIcon: {
-    width: 42,
-    height: 42,
+  alertIcon: {
+    width: 43,
+    height: 43,
     borderRadius: 14,
-    backgroundColor: 'rgba(34,197,94,0.10)',
+    backgroundColor:
+      'rgba(59,130,246,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
 
-  notificationText: {
+  alertText: {
     flex: 1,
   },
 
-  notificationTitle: {
+  alertTitle: {
     color: '#E2E8F0',
     fontSize: 14,
     fontWeight: '700',
   },
 
-  notificationDescription: {
+  alertDescription: {
     color: '#64748B',
     fontSize: 10,
-    marginTop: 3,
+    marginTop: 4,
   },
 
 
@@ -1183,9 +1025,9 @@ const styles = StyleSheet.create({
   // SALVAR
   // ====================================================
 
-  saveButtonWrapper: {
+  saveWrapper: {
     marginHorizontal: 20,
-    marginTop: 24,
+    marginTop: 22,
   },
 
   saveButton: {
@@ -1205,11 +1047,11 @@ const styles = StyleSheet.create({
     },
   },
 
-  saveButtonText: {
+  saveText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '900',
-    letterSpacing: 0.7,
+    letterSpacing: 0.6,
   },
 
 
@@ -1219,27 +1061,28 @@ const styles = StyleSheet.create({
 
   emergencyCard: {
     marginHorizontal: 20,
-    marginTop: 18,
-    padding: 16,
+    backgroundColor:
+      'rgba(127,29,29,0.16)',
     borderRadius: 20,
-    backgroundColor: 'rgba(127,29,29,0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.22)',
+    borderColor:
+      'rgba(239,68,68,0.25)',
+    padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   emergencyIcon: {
-    width: 46,
-    height: 46,
+    width: 47,
+    height: 47,
     borderRadius: 15,
-    backgroundColor: 'rgba(239,68,68,0.10)',
+    backgroundColor: '#DC2626',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
 
-  emergencyContent: {
+  emergencyTextContainer: {
     flex: 1,
   },
 
@@ -1249,44 +1092,67 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  emergencyText: {
+  emergencyDescription: {
     color: '#94A3B8',
     fontSize: 10,
     lineHeight: 15,
     marginTop: 3,
   },
 
-  emergencyNumber: {
+  numberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  number: {
     color: '#EF4444',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
-    marginTop: 4,
   },
 
 
   // ====================================================
-  // LIMPAR
+  // SOBRE
   // ====================================================
 
-  clearButton: {
+  aboutCard: {
     marginHorizontal: 20,
-    marginTop: 14,
-    height: 50,
-    borderRadius: 16,
+    marginTop: 18,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: '#0B1220',
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.22)',
-    backgroundColor: 'rgba(239,68,68,0.05)',
+    borderColor: '#172033',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  aboutIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    backgroundColor:
+      'rgba(34,197,94,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
+    marginRight: 12,
   },
 
-  clearButtonText: {
-    color: '#EF4444',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-    marginLeft: 8,
+  aboutContent: {
+    flex: 1,
+  },
+
+  aboutTitle: {
+    color: '#E2E8F0',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  aboutText: {
+    color: '#64748B',
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 3,
   },
 
 
@@ -1295,17 +1161,10 @@ const styles = StyleSheet.create({
   // ====================================================
 
   footer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    marginTop: 25,
-    opacity: 0.7,
-  },
-
-  footerText: {
-    color: '#475569',
+    color: '#334155',
     fontSize: 10,
-    marginLeft: 6,
+    textAlign: 'center',
+    marginTop: 24,
   },
 
 });

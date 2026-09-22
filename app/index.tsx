@@ -1,402 +1,413 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
-import * as Linking from 'expo-linking';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, router } from 'expo-router';
 
 import { supabase } from '../src/lib/supabase';
 
-const { width } = Dimensions.get('window');
+// =====================================================
+// CONFIGURAÇÃO DE CONEXÃO
+// =====================================================
 
-type HistoricoItem = {
-  id: string;
-  fumaca: number;
+// O ESP8266 envia uma leitura a cada 5 segundos.
+// Se passarem mais de 15 segundos sem uma nova leitura,
+// consideramos que a estação está OFFLINE.
+const TEMPO_MAXIMO_OFFLINE = 15000;
+
+// =====================================================
+// TIPO DA LEITURA
+// =====================================================
+
+interface Leitura {
+  id: number | string;
+  sensor_id?: number;
+  valor_fumaca: number;
   fogo: boolean;
   temperatura: number;
-  umidadeSolo: number;
-  hora: string;
+  umidade: number;
   status: string;
-};
+  created_at: string;
+}
 
-export default function Dashboard() {
-  const [fumaca, setFumaca] = useState(0);
-  const [fogo, setFogo] = useState(false);
-  const [temperatura, setTemperatura] = useState(0);
-  const [umidadeSolo, setUmidadeSolo] = useState(0);
+// =====================================================
+// HOME
+// =====================================================
 
-  const [status, setStatus] = useState('CONECTANDO');
-  const [corStatus, setCorStatus] = useState('#64748B');
+export default function Home() {
+  const { width } = useWindowDimensions();
 
   const [loading, setLoading] = useState(true);
-  const [arduinoOnline, setArduinoOnline] = useState(false);
-  const [ultimaAtualizacao, setUltimaAtualizacao] =
-    useState('Aguardando sinal...');
+  const [atualizando, setAtualizando] = useState(false);
 
-  const [historico, setHistorico] =
-    useState<HistoricoItem[]>([]);
+  const [ultimaLeitura, setUltimaLeitura] =
+    useState<Leitura | null>(null);
 
-  const [somAlarme, setSomAlarme] =
-    useState<Audio.Sound | null>(null);
+  // IMPORTANTE:
+  // Este estado representa o ESP8266,
+  // não apenas a conexão com o Supabase.
+  const [conectado, setConectado] = useState(false);
 
-  const [nomeUsuario, setNomeUsuario] =
-    useState('Usuário');
+  const isDesktop = width >= 900;
 
-  const [telefoneEmergencia, setTelefoneEmergencia] =
-    useState('');
-
-  useFocusEffect(
-    useCallback(() => {
-      async function carregarDados() {
-        try {
-          const nome =
-            await AsyncStorage.getItem('@EcoGuard:nome');
-
-          const telefone =
-            await AsyncStorage.getItem('@EcoGuard:telefone');
-
-          setNomeUsuario(nome || 'Usuário');
-          setTelefoneEmergencia(telefone || '');
-        } catch (error) {
-          console.log(
-            'Erro ao carregar dados:',
-            error
-          );
-        }
-      }
-
-      carregarDados();
-    }, [])
-  );
-
-  async function controlarSirene(
-    ligar: boolean
-  ) {
-    try {
-      if (ligar) {
-        if (!somAlarme) {
-          const { sound } =
-            await Audio.Sound.createAsync(
-              {
-                uri:
-                  'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg',
-              },
-              {
-                shouldPlay: true,
-                isLooping: true,
-              }
-            );
-
-          setSomAlarme(sound);
-        } else {
-          const statusSom =
-            await somAlarme.getStatusAsync();
-
-          if (
-            statusSom.isLoaded &&
-            !statusSom.isPlaying
-          ) {
-            await somAlarme.playAsync();
-          }
-        }
-      } else if (somAlarme) {
-        const statusSom =
-          await somAlarme.getStatusAsync();
-
-        if (
-          statusSom.isLoaded &&
-          statusSom.isPlaying
-        ) {
-          await somAlarme.stopAsync();
-        }
-      }
-    } catch (error) {
-      console.log(
-        'Erro na sirene:',
-        error
-      );
-    }
-  }
-
-  async function processarLeitura(
-    valorFumaca: number,
-    valorFogo: boolean,
-    valorTemperatura: number,
-    valorSolo: number,
-    timestamp: string
-  ) {
-    const hora =
-      new Date(timestamp).toLocaleTimeString(
-        'pt-BR'
-      );
-
-    let novoStatus = 'SEGURO';
-    let novaCor = '#22C55E';
-
-    if (
-      valorFogo ||
-      valorFumaca >= 70 ||
-      valorTemperatura >= 60
-    ) {
-      novoStatus = 'CRÍTICO';
-      novaCor = '#EF4444';
-
-      await controlarSirene(true);
-    } else if (
-      valorFumaca >= 40 ||
-      valorTemperatura >= 40 ||
-      valorSolo <= 30
-    ) {
-      novoStatus = 'ATENÇÃO';
-      novaCor = '#F59E0B';
-
-      await controlarSirene(false);
-    } else {
-      novoStatus = 'SEGURO';
-      novaCor = '#22C55E';
-
-      await controlarSirene(false);
-    }
-
-    setFumaca(valorFumaca);
-    setFogo(valorFogo);
-    setTemperatura(valorTemperatura);
-    setUmidadeSolo(valorSolo);
-
-    setStatus(novoStatus);
-    setCorStatus(novaCor);
-
-    setUltimaAtualizacao(hora);
-    setArduinoOnline(true);
-
-    setHistorico((anterior) => {
-      const nova: HistoricoItem = {
-        id:
-          timestamp +
-          Math.random()
-            .toString(36)
-            .substring(2),
-
-        fumaca: valorFumaca,
-        fogo: valorFogo,
-        temperatura: valorTemperatura,
-        umidadeSolo: valorSolo,
-        hora,
-        status: novoStatus,
-      };
-
-      return [nova, ...anterior].slice(0, 5);
-    });
-
-    if (novoStatus === 'CRÍTICO') {
-      try {
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Error
-        );
-
-        await Notifications.scheduleNotificationAsync(
-          {
-            content: {
-              title:
-                '🚨 ALERTA ECOGUARD',
-
-              body:
-                `Fumaça: ${valorFumaca}%\n` +
-                `Fogo: ${
-                  valorFogo
-                    ? 'DETECTADO'
-                    : 'Não detectado'
-                }\n` +
-                `Temperatura: ${valorTemperatura}°C`,
-
-              sound: true,
-            },
-
-            trigger: null,
-          }
-        );
-      } catch (error) {
-        console.log(
-          'Notificação indisponível:',
-          error
-        );
-      }
-    }
-  }
+  // =====================================================
+  // INICIALIZAÇÃO + REALTIME
+  // =====================================================
 
   useEffect(() => {
-    let ativo = true;
+    carregarUltimaLeitura(true);
 
-    async function buscarUltimaLeitura() {
-      try {
-        const { data, error } =
-          await supabase
-            .from('leituras')
-            .select('*')
-            .order('created_at', {
-              ascending: false,
-            })
-            .limit(1)
-            .maybeSingle();
-
-        if (error) {
-          throw error;
-        }
-
-        if (data && ativo) {
-          await processarLeitura(
-            Number(
-              data.valor_fumaca ??
-              data.fumaca ??
-              0
-            ),
-
-            Boolean(data.fogo),
-
-            Number(
-              data.temperatura ?? 0
-            ),
-
-            Number(
-              data.umidade_solo ?? 0
-            ),
-
-            data.created_at
+    const canal = supabase
+      .channel('ecoguard_home_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'leituras',
+          filter: 'sensor_id=eq.1',
+        },
+        (payload) => {
+          console.log(
+            '📡 NOVA LEITURA DA ESTAÇÃO:',
+            payload.new
           );
+
+          const novaLeitura =
+            converterLeitura(payload.new);
+
+          setUltimaLeitura(novaLeitura);
+
+          // AQUI SIM sabemos que o ESP8266
+          // acabou de enviar uma leitura.
+          setConectado(true);
+
+          setAtualizando(false);
         }
-      } catch (error) {
+      )
+      .subscribe((status) => {
         console.log(
-          'Erro ao buscar leitura:',
-          error
+          '📡 Status Realtime:',
+          status
         );
 
-        setArduinoOnline(false);
-      } finally {
-        if (ativo) {
-          setLoading(false);
+        // IMPORTANTE:
+        // SUBSCRIBED significa somente que o
+        // aplicativo conseguiu se inscrever no
+        // Realtime do Supabase.
+        //
+        // NÃO significa que o ESP8266 está online.
+        if (status === 'SUBSCRIBED') {
+          console.log(
+            '📡 Realtime conectado. Aguardando leitura do ESP8266...'
+          );
         }
-      }
-    }
 
-    buscarUltimaLeitura();
+        if (
+          status === 'CHANNEL_ERROR' ||
+          status === 'TIMED_OUT' ||
+          status === 'CLOSED'
+        ) {
+          console.log(
+            '❌ Realtime indisponível.'
+          );
+        }
+      });
 
-    const canal =
-      supabase
-        .channel('mudancas_leituras')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'leituras',
-          },
-          async (payload) => {
-            if (!ativo) return;
+    // ===================================================
+    // VERIFICAR SE O ESP8266 PAROU DE ENVIAR
+    // ===================================================
 
-            const leitura =
-              payload.new as any;
+    const verificarConexao = setInterval(() => {
+      setUltimaLeitura((leituraAtual) => {
+        if (!leituraAtual) {
+          setConectado(false);
+          return leituraAtual;
+        }
 
-            await processarLeitura(
-              Number(
-                leitura.valor_fumaca ??
-                leitura.fumaca ??
-                0
-              ),
+        const dataLeitura = new Date(
+          leituraAtual.created_at
+        );
 
-              Boolean(leitura.fogo),
+        const tempoDaLeitura =
+          dataLeitura.getTime();
 
-              Number(
-                leitura.temperatura ?? 0
-              ),
+        if (
+          !Number.isFinite(tempoDaLeitura)
+        ) {
+          console.log(
+            '⚠️ Data da leitura inválida.'
+          );
 
-              Number(
-                leitura.umidade_solo ?? 0
-              ),
+          setConectado(false);
 
-              leitura.created_at
-            );
-          }
-        )
-        .subscribe();
+          return leituraAtual;
+        }
+
+        const idadeDaLeitura =
+          Date.now() - tempoDaLeitura;
+
+        const estaOnline =
+          idadeDaLeitura <=
+          TEMPO_MAXIMO_OFFLINE;
+
+        setConectado(estaOnline);
+
+        if (!estaOnline) {
+          console.log(
+            '🔴 ESP8266 considerado OFFLINE.',
+            `${Math.round(
+              idadeDaLeitura / 1000
+            )} segundos sem leitura.`
+          );
+        }
+
+        return leituraAtual;
+      });
+    }, 3000);
+
+    // ===================================================
+    // LIMPEZA
+    // ===================================================
 
     return () => {
-      ativo = false;
-
+      clearInterval(verificarConexao);
       supabase.removeChannel(canal);
-
-      if (somAlarme) {
-        somAlarme
-          .unloadAsync()
-          .catch(() => {});
-      }
     };
   }, []);
 
-  function abrirWhatsApp() {
-    if (!telefoneEmergencia) {
-      Alert.alert(
-        'Contato não configurado',
-        'Cadastre um telefone de emergência nas configurações.'
+  // =====================================================
+  // CARREGAR ÚLTIMA LEITURA
+  // =====================================================
+
+  async function carregarUltimaLeitura(
+    mostrarLoading = false
+  ) {
+    try {
+      if (mostrarLoading) {
+        setLoading(true);
+      } else {
+        setAtualizando(true);
+      }
+
+      const { data, error } = await supabase
+        .from('leituras')
+        .select(
+          `
+            id,
+            sensor_id,
+            valor_fumaca,
+            fogo,
+            temperatura,
+            umidade,
+            created_at
+          `
+        )
+        .eq('sensor_id', 1)
+        .order('created_at', {
+          ascending: false,
+        })
+        .limit(1);
+
+      if (error) {
+        throw error;
+      }
+
+      // =================================================
+      // NENHUMA LEITURA
+      // =================================================
+
+      if (!data || data.length === 0) {
+        setUltimaLeitura(null);
+        setConectado(false);
+        return;
+      }
+
+      const leitura =
+        converterLeitura(data[0]);
+
+      setUltimaLeitura(leitura);
+
+      // =================================================
+      // VERIFICAR A IDADE DA LEITURA
+      // =================================================
+
+      const dataLeitura = new Date(
+        leitura.created_at
       );
 
-      return;
+      const tempoDaLeitura =
+        dataLeitura.getTime();
+
+      if (
+        !Number.isFinite(tempoDaLeitura)
+      ) {
+        console.log(
+          '⚠️ Leitura encontrada, mas a data é inválida.'
+        );
+
+        setConectado(false);
+        return;
+      }
+
+      const idadeDaLeitura =
+        Date.now() - tempoDaLeitura;
+
+      const estaOnline =
+        idadeDaLeitura <=
+        TEMPO_MAXIMO_OFFLINE;
+
+      setConectado(estaOnline);
+
+      console.log(
+        '📊 Última leitura:',
+        leitura
+      );
+
+      console.log(
+        '⏱️ Idade da leitura:',
+        Math.round(
+          idadeDaLeitura / 1000
+        ),
+        'segundos'
+      );
+
+      console.log(
+        estaOnline
+          ? '🟢 ESP8266 ONLINE'
+          : '🔴 ESP8266 OFFLINE'
+      );
+    } catch (error) {
+      console.log(
+        '❌ Erro ao carregar leitura:',
+        error
+      );
+
+      setConectado(false);
+    } finally {
+      setLoading(false);
+      setAtualizando(false);
+    }
+  }
+
+  // =====================================================
+  // CONVERTER LEITURA
+  // =====================================================
+
+  function converterLeitura(
+    item: any
+  ): Leitura {
+    const valorFumaca =
+      Number(item.valor_fumaca);
+
+    const valorTemperatura =
+      Number(item.temperatura);
+
+    const valorUmidade =
+      Number(item.umidade);
+
+    const fumaca =
+      Number.isFinite(valorFumaca)
+        ? valorFumaca
+        : 0;
+
+    const temperatura =
+      Number.isFinite(valorTemperatura)
+        ? valorTemperatura
+        : 0;
+
+    const umidade =
+      Number.isFinite(valorUmidade)
+        ? valorUmidade
+        : 0;
+
+    const fogo =
+      item.fogo === true ||
+      item.fogo === 'true' ||
+      item.fogo === 1 ||
+      item.fogo === '1' ||
+      item.fogo === 'TRUE';
+
+    const status =
+      calcularStatus(
+        fumaca,
+        temperatura,
+        fogo
+      );
+
+    return {
+      id: item.id,
+      sensor_id: Number(
+        item.sensor_id ?? 1
+      ),
+      valor_fumaca: fumaca,
+      fogo,
+      temperatura,
+      umidade,
+      status,
+      created_at:
+        item.created_at,
+    };
+  }
+
+  // =====================================================
+  // CALCULAR STATUS
+  // =====================================================
+
+  function calcularStatus(
+    fumaca: number,
+    temperatura: number,
+    fogo: boolean
+  ) {
+    if (
+      fogo ||
+      fumaca >= 70 ||
+      temperatura >= 60
+    ) {
+      return 'CRÍTICO';
     }
 
-    const numero =
-      telefoneEmergencia.replace(/\D/g, '');
+    if (
+      fumaca >= 40 ||
+      temperatura >= 40
+    ) {
+      return 'ATENÇÃO';
+    }
 
-    const mensagem =
-      `🚨 *ALERTA ECOGUARD* 🚨\n\n` +
-      `Situação crítica detectada!\n\n` +
-      `🌫️ Fumaça: ${fumaca}%\n` +
-      `🔥 Fogo: ${
-        fogo ? 'DETECTADO' : 'Não detectado'
-      }\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n` +
-      `🌱 Solo: ${umidadeSolo}%\n\n` +
-      `👤 Usuário: ${nomeUsuario}\n` +
-      `⏰ Horário: ${ultimaAtualizacao}`;
-
-    Linking.openURL(
-      `whatsapp://send?phone=55${numero}&text=${encodeURIComponent(
-        mensagem
-      )}`
-    ).catch(() => {
-      Alert.alert(
-        'Erro',
-        'Não foi possível abrir o WhatsApp.'
-      );
-    });
+    return 'SEGURO';
   }
 
-  function ligarBombeiros() {
-    Linking.openURL('tel:193').catch(() => {
-      Alert.alert(
-        'Erro',
-        'Não foi possível abrir o telefone.'
-      );
-    });
-  }
+  // =====================================================
+  // STATUS VISUAL
+  // =====================================================
+
+  // Se não existe leitura, NÃO mostramos SEGURO.
+  const statusAtual =
+    ultimaLeitura?.status ??
+    'SEM LEITURA';
+
+  const corStatus =
+    obterCorStatus(statusAtual);
+
+  const iconeStatus =
+    obterIconeStatus(statusAtual);
+
+  // =====================================================
+  // CARREGAMENTO
+  // =====================================================
 
   if (loading) {
     return (
       <View style={styles.loading}>
-        <View style={styles.loadingLogo}>
+        <View style={styles.loadingIcon}>
           <MaterialIcons
             name="eco"
             size={42}
@@ -404,1227 +415,1359 @@ export default function Dashboard() {
           />
         </View>
 
-        <Text style={styles.loadingBrand}>
+        <Text style={styles.loadingTitle}>
           EcoGuard
         </Text>
 
-        <Text style={styles.loadingSubtitle}>
-          Sistema inteligente de prevenção
+        <Text style={styles.loadingText}>
+          Conectando ao monitoramento...
         </Text>
 
         <ActivityIndicator
           size="small"
           color="#22C55E"
           style={{
-            marginTop: 24,
+            marginTop: 20,
           }}
         />
       </View>
     );
   }
 
-  const critico = status === 'CRÍTICO';
-  const atencao = status === 'ATENÇÃO';
-
-  const statusIcon = critico
-    ? 'warning'
-    : atencao
-    ? 'report-problem'
-    : 'verified';
+  // =====================================================
+  // HOME
+  // =====================================================
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{
-        paddingBottom: 130,
+        paddingBottom: 145,
       }}
       showsVerticalScrollIndicator={false}
     >
-      {/* HEADER */}
-
-      <LinearGradient
-        colors={
-          critico
-            ? [
-                '#451A1A',
-                '#1A0808',
-                '#020617',
-              ]
-            : atencao
-            ? [
-                '#422006',
-                '#1C1205',
-                '#020617',
-              ]
-            : [
-                '#063B25',
-                '#031F16',
-                '#020617',
-              ]
-        }
-        style={styles.header}
+      <View
+        style={[
+          styles.content,
+          isDesktop &&
+            styles.contentDesktop,
+        ]}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoIcon}>
-              <MaterialIcons
-                name="eco"
-                size={22}
-                color="#22C55E"
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <LinearGradient
+          colors={[
+            '#0D3B27',
+            '#082A1D',
+            '#030712',
+          ]}
+          start={{
+            x: 0,
+            y: 0,
+          }}
+          end={{
+            x: 1,
+            y: 1,
+          }}
+          style={styles.headerCard}
+        >
+          <View style={styles.headerTop}>
+            <View style={styles.logoArea}>
+              <View style={styles.logoIcon}>
+                <MaterialIcons
+                  name="eco"
+                  size={29}
+                  color="#4ADE80"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.logo}>
+                  EcoGuard
+                </Text>
+
+                <Text
+                  style={styles.subtitle}
+                >
+                  Prevenção de queimadas
+                </Text>
+              </View>
+            </View>
+
+            {atualizando && (
+              <ActivityIndicator
+                size="small"
+                color="#4ADE80"
               />
-            </View>
-
-            <View>
-              <Text style={styles.logo}>
-                EcoGuard
-              </Text>
-
-              <Text style={styles.logoSub}>
-                MONITORAMENTO AMBIENTAL
-              </Text>
-            </View>
+            )}
           </View>
+
+          {/* =================================================
+              CONEXÃO REAL DO ESP8266
+          ================================================= */}
 
           <View
             style={[
-              styles.onlineBadge,
+              styles.connectionBadge,
               {
-                borderColor: arduinoOnline
-                  ? '#166534'
-                  : '#7F1D1D',
+                backgroundColor:
+                  conectado
+                    ? '#052E16'
+                    : '#3F1111',
+
+                borderColor:
+                  conectado
+                    ? '#166534'
+                    : '#7F1D1D',
               },
             ]}
           >
             <View
               style={[
-                styles.onlineDot,
+                styles.connectionDot,
                 {
                   backgroundColor:
-                    arduinoOnline
+                    conectado
                       ? '#22C55E'
                       : '#EF4444',
                 },
               ]}
             />
 
-            <Text style={styles.onlineText}>
-              {arduinoOnline
-                ? 'ONLINE'
-                : 'OFFLINE'}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.hello}>
-          Olá, {nomeUsuario}
-        </Text>
-
-        <Text style={styles.headerDescription}>
-          Acompanhe a segurança do seu ambiente
-          em tempo real.
-        </Text>
-      </LinearGradient>
-
-      {/* STATUS */}
-
-      <View
-        style={[
-          styles.mainStatus,
-          {
-            borderColor: corStatus,
-          },
-        ]}
-      >
-        <View style={styles.mainStatusTop}>
-          <View
-            style={[
-              styles.statusIcon,
-              {
-                backgroundColor:
-                  corStatus + '18',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name={statusIcon}
-              size={28}
-              color={corStatus}
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.overline}>
-              SITUAÇÃO ATUAL
-            </Text>
-
             <Text
               style={[
-                styles.mainStatusText,
+                styles.connectionText,
                 {
-                  color: corStatus,
+                  color:
+                    conectado
+                      ? '#86EFAC'
+                      : '#FCA5A5',
                 },
               ]}
             >
-              {status}
+              {conectado
+                ? 'SISTEMA ONLINE'
+                : 'SISTEMA OFFLINE'}
             </Text>
           </View>
+        </LinearGradient>
 
+        {/* =================================================
+            STATUS PRINCIPAL
+        ================================================= */}
+
+        <View style={styles.section}>
           <View
-            style={[
-              styles.liveBadge,
-              {
-                backgroundColor:
-                  corStatus + '15',
-              },
-            ]}
+            style={styles.sectionHeader}
           >
-            <Text
-              style={[
-                styles.liveText,
-                {
-                  color: corStatus,
-                },
-              ]}
-            >
-              AO VIVO
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.smokeCenter}>
-          <Text style={styles.smokeValue}>
-            {fumaca}
-            <Text style={styles.smokePercent}>
-              %
-            </Text>
-          </Text>
-
-          <Text style={styles.smokeDescription}>
-            nível de fumaça
-          </Text>
-        </View>
-
-        <View style={styles.progress}>
-          <View
-            style={[
-              styles.progressValue,
-              {
-                width: `${Math.min(
-                  Math.max(fumaca, 0),
-                  100
-                )}%`,
-                backgroundColor: corStatus,
-              },
-            ]}
-          />
-        </View>
-
-        <View style={styles.scale}>
-          <Text style={styles.scaleText}>
-            Seguro
-          </Text>
-
-          <Text style={styles.scaleText}>
-            Atenção
-          </Text>
-
-          <Text style={styles.scaleText}>
-            Crítico
-          </Text>
-        </View>
-      </View>
-
-      {/* SENSORES */}
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>
-            Sensores
-          </Text>
-
-          <Text style={styles.sectionSubtitle}>
-            Dados recebidos do sistema
-          </Text>
-        </View>
-
-        <MaterialIcons
-          name="sensors"
-          size={22}
-          color="#334155"
-        />
-      </View>
-
-      <View style={styles.sensorGrid}>
-        <View style={styles.sensorCard}>
-          <View
-            style={[
-              styles.sensorIcon,
-              {
-                backgroundColor:
-                  '#38BDF815',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name="cloud"
-              size={22}
-              color="#38BDF8"
-            />
-          </View>
-
-          <Text style={styles.sensorLabel}>
-            Fumaça
-          </Text>
-
-          <Text style={styles.sensorNumber}>
-            {fumaca}%
-          </Text>
-
-          <Text style={styles.sensorStatus}>
-            Nível atual
-          </Text>
-        </View>
-
-        <View style={styles.sensorCard}>
-          <View
-            style={[
-              styles.sensorIcon,
-              {
-                backgroundColor: fogo
-                  ? '#EF444418'
-                  : '#22C55E18',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name="local-fire-department"
-              size={22}
-              color={
-                fogo
-                  ? '#EF4444'
-                  : '#22C55E'
-              }
-            />
-          </View>
-
-          <Text style={styles.sensorLabel}>
-            Fogo
-          </Text>
-
-          <Text
-            style={[
-              styles.sensorNumberSmall,
-              {
-                color: fogo
-                  ? '#EF4444'
-                  : '#22C55E',
-              },
-            ]}
-          >
-            {fogo
-              ? 'DETECTADO'
-              : 'NORMAL'}
-          </Text>
-
-          <Text style={styles.sensorStatus}>
-            Detecção térmica
-          </Text>
-        </View>
-
-        <View style={styles.sensorCard}>
-          <View
-            style={[
-              styles.sensorIcon,
-              {
-                backgroundColor:
-                  '#F9731618',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name="thermostat"
-              size={22}
-              color="#F97316"
-            />
-          </View>
-
-          <Text style={styles.sensorLabel}>
-            Temperatura
-          </Text>
-
-          <Text style={styles.sensorNumber}>
-            {temperatura}°
-          </Text>
-
-          <Text style={styles.sensorStatus}>
-            Celsius
-          </Text>
-        </View>
-
-        <View style={styles.sensorCard}>
-          <View
-            style={[
-              styles.sensorIcon,
-              {
-                backgroundColor:
-                  '#22C55E18',
-              },
-            ]}
-          >
-            <MaterialIcons
-              name="water-drop"
-              size={22}
-              color="#22C55E"
-            />
-          </View>
-
-          <Text style={styles.sensorLabel}>
-            Umidade do solo
-          </Text>
-
-          <Text style={styles.sensorNumber}>
-            {umidadeSolo}%
-          </Text>
-
-          <Text style={styles.sensorStatus}>
-            Umidade atual
-          </Text>
-        </View>
-      </View>
-
-      {/* ALERTA */}
-
-      {critico && (
-        <View style={styles.criticalBox}>
-          <View style={styles.criticalIcon}>
-            <MaterialIcons
-              name="warning"
-              size={23}
-              color="#EF4444"
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.criticalTitle}>
-              Atenção imediata
-            </Text>
-
-            <Text style={styles.criticalText}>
-              O sistema identificou condições
-              críticas no ambiente.
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* WHATSAPP */}
-
-      {critico && (
-        <TouchableOpacity
-          style={styles.whatsapp}
-          onPress={abrirWhatsApp}
-          activeOpacity={0.85}
-        >
-          <View style={styles.whatsappIcon}>
-            <MaterialIcons
-              name="send"
-              size={20}
-              color="#FFF"
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.whatsappTitle}>
-              Enviar alerta
-            </Text>
-
-            <Text style={styles.whatsappText}>
-              Compartilhar situação pelo WhatsApp
-            </Text>
-          </View>
-
-          <MaterialIcons
-            name="arrow-forward"
-            size={21}
-            color="#FFF"
-          />
-        </TouchableOpacity>
-      )}
-
-      {/* IA */}
-
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.push('/ia')}
-        style={styles.aiContainer}
-      >
-        <LinearGradient
-          colors={[
-            '#064E3B',
-            '#022C22',
-          ]}
-          style={styles.aiCard}
-        >
-          <View style={styles.aiIcon}>
-            <MaterialIcons
-              name="auto-awesome"
-              size={25}
-              color="#4ADE80"
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <View style={styles.aiTitleRow}>
-              <Text style={styles.aiTitle}>
-                EcoGuard IA
+            <View>
+              <Text
+                style={styles.sectionLabel}
+              >
+                MONITORAMENTO
               </Text>
 
-              <View style={styles.aiTag}>
-                <Text style={styles.aiTagText}>
-                  GRATUITA
-                </Text>
-              </View>
+              <Text
+                style={styles.sectionTitle}
+              >
+                Status do ambiente
+              </Text>
             </View>
 
-            <Text style={styles.aiDescription}>
-              Tire dúvidas sobre segurança,
-              prevenção e suas leituras.
-            </Text>
-          </View>
-
-          <MaterialIcons
-            name="chevron-right"
-            size={27}
-            color="#4ADE80"
-          />
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* ÚLTIMO SINAL */}
-
-      <View style={styles.signal}>
-        <View style={styles.signalIcon}>
-          <MaterialIcons
-            name="access-time"
-            size={19}
-            color="#64748B"
-          />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.signalLabel}>
-            ÚLTIMA ATUALIZAÇÃO
-          </Text>
-
-          <Text style={styles.signalValue}>
-            {ultimaAtualizacao}
-          </Text>
-        </View>
-
-        <View
-          style={[
-            styles.signalDot,
-            {
-              backgroundColor:
-                arduinoOnline
-                  ? '#22C55E'
-                  : '#EF4444',
-            },
-          ]}
-        />
-      </View>
-
-      {/* HISTÓRICO */}
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>
-            Atividade recente
-          </Text>
-
-          <Text style={styles.sectionSubtitle}>
-            Últimas leituras recebidas
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() =>
-            router.push('/historico')
-          }
-        >
-          <Text style={styles.seeAll}>
-            Ver tudo
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {historico.length === 0 ? (
-        <View style={styles.empty}>
-          <MaterialIcons
-            name="history"
-            size={30}
-            color="#334155"
-          />
-
-          <Text style={styles.emptyText}>
-            Aguardando leituras...
-          </Text>
-        </View>
-      ) : (
-        historico.slice(0, 3).map((item) => {
-          const cor =
-            item.status === 'CRÍTICO'
-              ? '#EF4444'
-              : item.status === 'ATENÇÃO'
-              ? '#F59E0B'
-              : '#22C55E';
-
-          return (
             <View
-              key={item.id}
-              style={styles.historyItem}
+              style={[
+                styles.liveBadge,
+                {
+                  backgroundColor:
+                    corStatus + '18',
+
+                  borderColor:
+                    corStatus + '40',
+                },
+              ]}
             >
               <View
                 style={[
-                  styles.historyIndicator,
+                  styles.liveDot,
                   {
-                    backgroundColor: cor,
+                    backgroundColor:
+                      corStatus,
                   },
                 ]}
               />
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.historyTime}>
-                  {item.hora}
-                </Text>
-
-                <Text style={styles.historyData}>
-                  Fumaça {item.fumaca}% •{' '}
-                  {item.temperatura}°C
-                </Text>
-              </View>
-
-              <View
+              <Text
                 style={[
-                  styles.historyBadge,
+                  styles.liveText,
                   {
-                    backgroundColor:
-                      cor + '18',
+                    color:
+                      corStatus,
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.historyBadgeText,
-                    {
-                      color: cor,
-                    },
-                  ]}
-                >
-                  {item.status}
-                </Text>
-              </View>
+                {ultimaLeitura
+                  ? 'AO VIVO'
+                  : 'SEM DADOS'}
+              </Text>
             </View>
-          );
-        })
-      )}
+          </View>
 
-      {/* EMERGÊNCIA */}
+          <LinearGradient
+            colors={[
+              corStatus + '25',
+              '#0B1220',
+              '#0B1220',
+            ]}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
+            style={[
+              styles.statusCard,
+              {
+                borderColor:
+                  corStatus + '65',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.statusIcon,
+                {
+                  backgroundColor:
+                    corStatus + '15',
 
-      <TouchableOpacity
-        style={styles.emergency}
-        onPress={ligarBombeiros}
-        activeOpacity={0.85}
-      >
-        <View style={styles.emergencyIcon}>
+                  borderColor:
+                    corStatus + '55',
+                },
+              ]}
+            >
+              <MaterialIcons
+                name={
+                  iconeStatus as any
+                }
+                size={46}
+                color={corStatus}
+              />
+            </View>
+
+            <View
+              style={styles.statusContent}
+            >
+              <Text
+                style={styles.statusSmallLabel}
+              >
+                SITUAÇÃO ATUAL
+              </Text>
+
+              <Text
+                style={[
+                  styles.statusValue,
+                  {
+                    color:
+                      corStatus,
+                  },
+                ]}
+              >
+                {statusAtual}
+              </Text>
+
+              <Text
+                style={
+                  styles.statusDescription
+                }
+              >
+                {obterDescricaoStatus(
+                  statusAtual
+                )}
+              </Text>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* =================================================
+            ALERTA DE FOGO
+        ================================================= */}
+
+        {ultimaLeitura?.fogo && (
+          <View style={styles.fireAlert}>
+            <View
+              style={styles.fireAlertIcon}
+            >
+              <MaterialIcons
+                name="local-fire-department"
+                size={28}
+                color="#EF4444"
+              />
+            </View>
+
+            <View
+              style={
+                styles.fireAlertContent
+              }
+            >
+              <Text
+                style={
+                  styles.fireAlertTitle
+                }
+              >
+                FOGO DETECTADO
+              </Text>
+
+              <Text
+                style={
+                  styles.fireAlertText
+                }
+              >
+                O sensor identificou uma
+                possível chama no ambiente
+                monitorado.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* =================================================
+            LEITURAS
+        ================================================= */}
+
+        <View style={styles.section}>
+          <View
+            style={styles.sectionHeader}
+          >
+            <View>
+              <Text
+                style={styles.sectionLabel}
+              >
+                SENSORES
+              </Text>
+
+              <Text
+                style={styles.sectionTitle}
+              >
+                Leitura em tempo real
+              </Text>
+            </View>
+
+            <View
+              style={styles.stationMiniBadge}
+            >
+              <MaterialIcons
+                name="sensors"
+                size={14}
+                color="#4ADE80"
+              />
+
+              <Text
+                style={
+                  styles.stationMiniText
+                }
+              >
+                ESTAÇÃO 01
+              </Text>
+            </View>
+          </View>
+
+          {ultimaLeitura ? (
+            <View
+              style={[
+                styles.sensorGrid,
+                isDesktop &&
+                  styles.sensorGridDesktop,
+              ]}
+            >
+              {/* FUMAÇA */}
+
+              <SensorCard
+                icon="cloud"
+                title="Fumaça"
+                value={`${formatarNumero(
+                  ultimaLeitura.valor_fumaca
+                )}%`}
+                description="Nível detectado"
+                color={
+                  ultimaLeitura
+                    .valor_fumaca >= 70
+                    ? '#EF4444'
+                    : ultimaLeitura
+                        .valor_fumaca >= 40
+                    ? '#F59E0B'
+                    : '#38BDF8'
+                }
+                progress={Math.min(
+                  Math.max(
+                    ultimaLeitura.valor_fumaca,
+                    0
+                  ),
+                  100
+                )}
+              />
+
+              {/* TEMPERATURA */}
+
+              <SensorCard
+                icon="thermostat"
+                title="Temperatura"
+                value={`${formatarNumero(
+                  ultimaLeitura.temperatura
+                )}°C`}
+                description="Temperatura atual"
+                color={
+                  ultimaLeitura
+                    .temperatura >= 60
+                    ? '#EF4444'
+                    : ultimaLeitura
+                        .temperatura >= 40
+                    ? '#F59E0B'
+                    : '#F97316'
+                }
+                progress={Math.min(
+                  Math.max(
+                    (ultimaLeitura
+                      .temperatura /
+                      80) *
+                      100,
+                    0
+                  ),
+                  100
+                )}
+              />
+
+              {/* UMIDADE */}
+
+              <SensorCard
+                icon="water-drop"
+                title="Umidade"
+                value={`${formatarNumero(
+                  ultimaLeitura.umidade
+                )}%`}
+                description="Umidade do ambiente"
+                color="#60A5FA"
+                progress={Math.min(
+                  Math.max(
+                    ultimaLeitura.umidade,
+                    0
+                  ),
+                  100
+                )}
+              />
+
+              {/* FOGO */}
+
+              <SensorCard
+                icon="local-fire-department"
+                title="Fogo"
+                value={
+                  ultimaLeitura.fogo
+                    ? 'DETECTADO'
+                    : 'NORMAL'
+                }
+                description={
+                  ultimaLeitura.fogo
+                    ? 'Atenção imediata'
+                    : 'Nenhuma chama detectada'
+                }
+                color={
+                  ultimaLeitura.fogo
+                    ? '#EF4444'
+                    : '#22C55E'
+                }
+                valueSmall
+                fire={
+                  ultimaLeitura.fogo
+                }
+                progress={
+                  ultimaLeitura.fogo
+                    ? 100
+                    : 0
+                }
+              />
+            </View>
+          ) : (
+            <View style={styles.emptyCard}>
+              <View
+                style={styles.emptyIcon}
+              >
+                <MaterialIcons
+                  name="sensors-off"
+                  size={38}
+                  color="#475569"
+                />
+              </View>
+
+              <Text
+                style={styles.emptyTitle}
+              >
+                Nenhuma leitura encontrada
+              </Text>
+
+              <Text
+                style={styles.emptyText}
+              >
+                O ESP8266 ainda não enviou
+                dados para o EcoGuard.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* =================================================
+            ÚLTIMA ATUALIZAÇÃO
+        ================================================= */}
+
+        {ultimaLeitura && (
+          <View
+            style={styles.updateCard}
+          >
+            <View
+              style={styles.updateIcon}
+            >
+              <MaterialIcons
+                name="update"
+                size={22}
+                color="#22C55E"
+              />
+            </View>
+
+            <View
+              style={styles.updateContent}
+            >
+              <Text
+                style={styles.updateTitle}
+              >
+                Última leitura recebida
+              </Text>
+
+              <Text
+                style={styles.updateDate}
+              >
+                {formatarData(
+                  ultimaLeitura.created_at
+                )}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.connectedSmall,
+                {
+                  backgroundColor:
+                    conectado
+                      ? '#052E16'
+                      : '#3F1111',
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.connectedSmallDot,
+                  {
+                    backgroundColor:
+                      conectado
+                        ? '#22C55E'
+                        : '#EF4444',
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.connectedSmallText,
+                  {
+                    color:
+                      conectado
+                        ? '#4ADE80'
+                        : '#FCA5A5',
+                  },
+                ]}
+              >
+                {conectado
+                  ? 'CONECTADO'
+                  : 'OFFLINE'}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* =================================================
+            RODAPÉ INFORMATIVO
+        ================================================= */}
+
+        <View
+          style={styles.footerInfo}
+        >
           <MaterialIcons
-            name="local-fire-department"
-            size={23}
-            color="#FCA5A5"
+            name="security"
+            size={19}
+            color="#22C55E"
           />
-        </View>
 
-        <View style={{ flex: 1 }}>
-          <Text style={styles.emergencyTitle}>
-            EMERGÊNCIA
-          </Text>
-
-          <Text style={styles.emergencyText}>
-            Corpo de Bombeiros • 193
+          <Text
+            style={styles.footerText}
+          >
+            O EcoGuard monitora continuamente
+            as condições ambientais da estação.
           </Text>
         </View>
-
-        <View style={styles.callIcon}>
-          <MaterialIcons
-            name="call"
-            size={20}
-            color="#FFF"
-          />
-        </View>
-      </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
+// =====================================================
+// CARD DOS SENSORES
+// =====================================================
+
+function SensorCard({
+  icon,
+  title,
+  value,
+  description,
+  color,
+  progress,
+  valueSmall = false,
+  fire = false,
+}: {
+  icon: string;
+  title: string;
+  value: string;
+  description: string;
+  color: string;
+  progress: number;
+  valueSmall?: boolean;
+  fire?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.sensorCard,
+        {
+          borderColor: fire
+            ? '#EF444460'
+            : color + '30',
+        },
+      ]}
+    >
+      <View
+        style={styles.sensorHeader}
+      >
+        <View
+          style={[
+            styles.sensorIcon,
+            {
+              backgroundColor:
+                color + '16',
+            },
+          ]}
+        >
+          <MaterialIcons
+            name={icon as any}
+            size={27}
+            color={color}
+          />
+        </View>
+
+        {fire && (
+          <View
+            style={styles.dangerDot}
+          >
+            <View
+              style={
+                styles.dangerDotInner
+              }
+            />
+          </View>
+        )}
+      </View>
+
+      <Text
+        style={styles.sensorTitle}
+      >
+        {title}
+      </Text>
+
+      <Text
+        style={[
+          styles.sensorValue,
+          valueSmall &&
+            styles.sensorValueSmall,
+          {
+            color: fire
+              ? '#EF4444'
+              : '#FFFFFF',
+          },
+        ]}
+      >
+        {value}
+      </Text>
+
+      <Text
+        style={
+          styles.sensorDescription
+        }
+      >
+        {description}
+      </Text>
+
+      <View
+        style={
+          styles.progressBackground
+        }
+      >
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${Math.max(
+                3,
+                Math.min(
+                  progress,
+                  100
+                )
+              )}%`,
+              backgroundColor: color,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+// =====================================================
+// FORMATAÇÃO
+// =====================================================
+
+function formatarNumero(
+  valor: number
+) {
+  if (!Number.isFinite(valor)) {
+    return '0';
+  }
+
+  if (Number.isInteger(valor)) {
+    return String(valor);
+  }
+
+  return valor.toFixed(1);
+}
+
+function formatarData(
+  data: string
+) {
+  const dataConvertida =
+    new Date(data);
+
+  if (
+    !Number.isFinite(
+      dataConvertida.getTime()
+    )
+  ) {
+    return 'Data indisponível';
+  }
+
+  return dataConvertida.toLocaleString(
+    'pt-BR',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }
+  );
+}
+
+// =====================================================
+// STATUS
+// =====================================================
+
+function obterCorStatus(
+  status: string
+) {
+  if (
+    status === 'CRÍTICO' ||
+    status === 'CRITICO'
+  ) {
+    return '#EF4444';
+  }
+
+  if (
+    status === 'ATENÇÃO' ||
+    status === 'ATENCAO'
+  ) {
+    return '#F59E0B';
+  }
+
+  if (
+    status === 'SEM LEITURA'
+  ) {
+    return '#64748B';
+  }
+
+  return '#22C55E';
+}
+
+function obterIconeStatus(
+  status: string
+) {
+  if (
+    status === 'CRÍTICO' ||
+    status === 'CRITICO'
+  ) {
+    return 'warning';
+  }
+
+  if (
+    status === 'ATENÇÃO' ||
+    status === 'ATENCAO'
+  ) {
+    return 'report-problem';
+  }
+
+  if (
+    status === 'SEM LEITURA'
+  ) {
+    return 'sensors-off';
+  }
+
+  return 'verified';
+}
+
+function obterDescricaoStatus(
+  status: string
+) {
+  if (
+    status === 'CRÍTICO' ||
+    status === 'CRITICO'
+  ) {
+    return 'Foi identificado um risco crítico. Verifique o ambiente imediatamente.';
+  }
+
+  if (
+    status === 'ATENÇÃO' ||
+    status === 'ATENCAO'
+  ) {
+    return 'Os sensores identificaram condições que merecem atenção.';
+  }
+
+  if (
+    status === 'SEM LEITURA'
+  ) {
+    return 'Ainda não foi recebida nenhuma leitura da estação de monitoramento.';
+  }
+
+  return 'As condições monitoradas estão dentro dos níveis seguros.';
+}
+
+// =====================================================
+// ESTILOS
+// =====================================================
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#030712',
   },
+
+  content: {
+    width: '100%',
+  },
+
+  contentDesktop: {
+    maxWidth: 1100,
+    alignSelf: 'center',
+  },
+
+  // ===================================================
+  // LOADING
+  // ===================================================
 
   loading: {
     flex: 1,
-    backgroundColor: '#020617',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#030712',
+    padding: 20,
   },
 
-  loadingLogo: {
-    width: 78,
-    height: 78,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
+  loadingIcon: {
+    width: 84,
+    height: 84,
+    borderRadius: 26,
     backgroundColor: '#052E16',
     borderWidth: 1,
     borderColor: '#166534',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
-  loadingBrand: {
-    color: '#FFF',
+  loadingTitle: {
+    color: '#FFFFFF',
     fontSize: 27,
     fontWeight: '900',
-    marginTop: 17,
+    marginTop: 18,
   },
 
-  loadingSubtitle: {
+  loadingText: {
     color: '#64748B',
     fontSize: 13,
-    marginTop: 4,
+    marginTop: 6,
   },
 
-  header: {
-    width,
+  // ===================================================
+  // HEADER
+  // ===================================================
+
+  headerCard: {
     paddingHorizontal: 20,
-    paddingTop: 62,
-    paddingBottom: 48,
+    paddingTop: 56,
+    paddingBottom: 25,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
 
-  headerRow: {
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
 
-  logoRow: {
+  logoArea: {
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   logoIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#052E16',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 11,
-    borderWidth: 1,
-    borderColor: '#166534',
-  },
-
-  logo: {
-    color: '#F8FAFC',
-    fontSize: 22,
-    fontWeight: '900',
-  },
-
-  logoSub: {
-    color: '#4ADE80',
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginTop: 2,
-  },
-
-  onlineBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: '#02061755',
-  },
-
-  onlineDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 10,
-    marginRight: 6,
-  },
-
-  onlineText: {
-    color: '#CBD5E1',
-    fontSize: 9,
-    fontWeight: '900',
-  },
-
-  hello: {
-    color: '#FFF',
-    fontSize: 25,
-    fontWeight: '900',
-    marginTop: 34,
-  },
-
-  headerDescription: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginTop: 5,
-  },
-
-  mainStatus: {
-    marginHorizontal: 20,
-    marginTop: -22,
-    backgroundColor: '#0B1220',
-    borderRadius: 25,
-    padding: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-
-  mainStatusTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  statusIcon: {
     width: 52,
     height: 52,
     borderRadius: 17,
-    alignItems: 'center',
+    backgroundColor: '#052E16',
+    borderWidth: 1,
+    borderColor: '#166534',
     justifyContent: 'center',
-    marginRight: 12,
-  },
-
-  overline: {
-    color: '#64748B',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.3,
-  },
-
-  mainStatusText: {
-    fontSize: 20,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-
-  liveBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-
-  liveText: {
-    fontSize: 8,
-    fontWeight: '900',
-  },
-
-  smokeCenter: {
     alignItems: 'center',
-    marginTop: 19,
+    marginRight: 13,
   },
 
-  smokeValue: {
-    color: '#F8FAFC',
-    fontSize: 58,
+  logo: {
+    color: '#FFFFFF',
+    fontSize: 27,
     fontWeight: '900',
-    letterSpacing: -3,
+    letterSpacing: -0.5,
   },
 
-  smokePercent: {
-    color: '#64748B',
-    fontSize: 23,
-    fontWeight: '700',
-  },
-
-  smokeDescription: {
-    color: '#64748B',
-    fontSize: 11,
-    marginTop: -5,
-  },
-
-  progress: {
-    height: 8,
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginTop: 20,
-  },
-
-  progressValue: {
-    height: '100%',
-    borderRadius: 20,
-  },
-
-  scale: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 7,
-  },
-
-  scaleText: {
-    color: '#475569',
-    fontSize: 9,
-  },
-
-  sectionHeader: {
-    marginHorizontal: 20,
-    marginTop: 28,
-    marginBottom: 13,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  sectionTitle: {
-    color: '#F8FAFC',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-
-  sectionSubtitle: {
-    color: '#64748B',
+  subtitle: {
+    color: '#86A99A',
     fontSize: 11,
     marginTop: 3,
   },
 
-  seeAll: {
-    color: '#4ADE80',
-    fontSize: 11,
+  connectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    marginTop: 19,
+  },
+
+  connectionDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 10,
+    marginRight: 7,
+  },
+
+  connectionText: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+
+  // ===================================================
+  // SEÇÕES
+  // ===================================================
+
+  section: {
+    marginHorizontal: 20,
+    marginTop: 25,
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 13,
+  },
+
+  sectionLabel: {
+    color: '#475569',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+
+  sectionTitle: {
+    color: '#E2E8F0',
+    fontSize: 17,
     fontWeight: '800',
+    marginTop: 3,
+  },
+
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 9,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 10,
+    marginRight: 5,
+  },
+
+  liveText: {
+    fontSize: 7,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+
+  // ===================================================
+  // STATUS
+  // ===================================================
+
+  statusCard: {
+    minHeight: 154,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+
+  statusIcon: {
+    width: 82,
+    height: 82,
+    borderRadius: 26,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 18,
+  },
+
+  statusContent: {
+    flex: 1,
+  },
+
+  statusSmallLabel: {
+    color: '#64748B',
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1.3,
+  },
+
+  statusValue: {
+    fontSize: 30,
+    fontWeight: '900',
+    marginTop: 3,
+  },
+
+  statusDescription: {
+    color: '#94A3B8',
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 4,
+    maxWidth: 500,
+  },
+
+  // ===================================================
+  // ALERTA DE FOGO
+  // ===================================================
+
+  fireAlert: {
+    marginHorizontal: 20,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: '#2A0D0D',
+    borderWidth: 1,
+    borderColor: '#7F1D1D',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  fireAlertIcon: {
+    width: 49,
+    height: 49,
+    borderRadius: 15,
+    backgroundColor: '#450A0A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  fireAlertContent: {
+    flex: 1,
+  },
+
+  fireAlertTitle: {
+    color: '#F87171',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+  },
+
+  fireAlertText: {
+    color: '#FCA5A5',
+    fontSize: 9,
+    lineHeight: 14,
+    marginTop: 3,
+  },
+
+  // ===================================================
+  // SENSORES
+  // ===================================================
+
+  stationMiniBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#052E16',
+    borderWidth: 1,
+    borderColor: '#14532D',
+    borderRadius: 9,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+
+  stationMiniText: {
+    color: '#4ADE80',
+    fontSize: 7,
+    fontWeight: '900',
+    marginLeft: 4,
   },
 
   sensorGrid: {
-    marginHorizontal: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
 
+  sensorGridDesktop: {
+    gap: 12,
+  },
+
   sensorCard: {
-    width: '48.3%',
+    width: '48.5%',
+    minHeight: 190,
     backgroundColor: '#0B1220',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 10,
+    borderRadius: 21,
     borderWidth: 1,
-    borderColor: '#172033',
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  sensorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
   sensorIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
-    alignItems: 'center',
+    width: 49,
+    height: 49,
+    borderRadius: 15,
     justifyContent: 'center',
+    alignItems: 'center',
   },
 
-  sensorLabel: {
+  dangerDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 10,
+    backgroundColor: '#450A0A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dangerDotInner: {
+    width: 5,
+    height: 5,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+  },
+
+  sensorTitle: {
     color: '#64748B',
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 13,
+  },
+
+  sensorValue: {
+    color: '#FFFFFF',
+    fontSize: 27,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+
+  sensorValueSmall: {
+    fontSize: 17,
+    marginTop: 8,
+  },
+
+  sensorDescription: {
+    color: '#475569',
+    fontSize: 9,
+    marginTop: 5,
+  },
+
+  progressBackground: {
+    height: 4,
+    backgroundColor: '#172033',
+    borderRadius: 10,
+    marginTop: 14,
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    height: 4,
+    borderRadius: 10,
+  },
+
+  // ===================================================
+  // SEM LEITURA
+  // ===================================================
+
+  emptyCard: {
+    minHeight: 190,
+    backgroundColor: '#0B1220',
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: '#172033',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 25,
+  },
+
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#111827',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  emptyTitle: {
+    color: '#CBD5E1',
+    fontSize: 15,
+    fontWeight: '800',
     marginTop: 12,
   },
 
-  sensorNumber: {
-    color: '#F8FAFC',
-    fontSize: 24,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-
-  sensorNumberSmall: {
-    fontSize: 14,
-    fontWeight: '900',
-    marginTop: 10,
-  },
-
-  sensorStatus: {
-    color: '#475569',
-    fontSize: 9,
-    marginTop: 2,
-  },
-
-  criticalBox: {
-    marginHorizontal: 20,
-    marginTop: 5,
-    padding: 15,
-    borderRadius: 20,
-    backgroundColor: '#2B0B0B',
-    borderWidth: 1,
-    borderColor: '#7F1D1D',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  criticalIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#450A0A',
-    marginRight: 12,
-  },
-
-  criticalTitle: {
-    color: '#FCA5A5',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-
-  criticalText: {
-    color: '#94A3B8',
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 2,
-  },
-
-  whatsapp: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    backgroundColor: '#16A34A',
-    borderRadius: 18,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  whatsappIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#FFFFFF22',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 11,
-  },
-
-  whatsappTitle: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-
-  whatsappText: {
-    color: '#DCFCE7',
+  emptyText: {
+    color: '#64748B',
     fontSize: 10,
-    marginTop: 2,
+    textAlign: 'center',
+    lineHeight: 15,
+    marginTop: 6,
+    maxWidth: 300,
   },
 
-  aiContainer: {
+  // ===================================================
+  // ATUALIZAÇÃO
+  // ===================================================
+
+  updateCard: {
     marginHorizontal: 20,
     marginTop: 14,
-    borderRadius: 21,
-    overflow: 'hidden',
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: '#0B1220',
     borderWidth: 1,
-    borderColor: '#166534',
-  },
-
-  aiCard: {
-    minHeight: 82,
-    padding: 15,
+    borderColor: '#172033',
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  aiIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    backgroundColor: '#064E3B',
-    alignItems: 'center',
+  updateIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 13,
+    backgroundColor: '#052E16',
     justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
 
-  aiTitleRow: {
+  updateContent: {
+    flex: 1,
+  },
+
+  updateTitle: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  updateDate: {
+    color: '#64748B',
+    fontSize: 9,
+    marginTop: 4,
+  },
+
+  connectedSmall: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 6,
   },
 
-  aiTitle: {
-    color: '#ECFDF5',
-    fontSize: 15,
-    fontWeight: '900',
+  connectedSmallDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 10,
+    marginRight: 5,
   },
 
-  aiTag: {
-    marginLeft: 7,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: '#166534',
-  },
-
-  aiTagText: {
-    color: '#BBF7D0',
+  connectedSmallText: {
     fontSize: 7,
     fontWeight: '900',
   },
 
-  aiDescription: {
-    color: '#86EFAC',
-    fontSize: 10,
-    lineHeight: 15,
-    marginTop: 3,
-    paddingRight: 5,
-  },
+  // ===================================================
+  // RODAPÉ
+  // ===================================================
 
-  signal: {
+  footerInfo: {
     marginHorizontal: 20,
-    marginTop: 14,
-    padding: 13,
-    borderRadius: 17,
-    backgroundColor: '#080F1C',
-    borderWidth: 1,
-    borderColor: '#172033',
+    marginTop: 18,
+    paddingHorizontal: 4,
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  signalIcon: {
-    width: 37,
-    height: 37,
-    borderRadius: 12,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
-  signalLabel: {
+  footerText: {
+    flex: 1,
     color: '#475569',
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-
-  signalValue: {
-    color: '#CBD5E1',
-    fontSize: 12,
-    marginTop: 3,
-  },
-
-  signalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 10,
-  },
-
-  empty: {
-    marginHorizontal: 20,
-    padding: 25,
-    borderRadius: 18,
-    backgroundColor: '#0B1220',
-    borderWidth: 1,
-    borderColor: '#172033',
-    alignItems: 'center',
-  },
-
-  emptyText: {
-    color: '#475569',
-    fontSize: 11,
-    marginTop: 8,
-  },
-
-  historyItem: {
-    marginHorizontal: 20,
-    marginBottom: 8,
-    padding: 13,
-    borderRadius: 17,
-    backgroundColor: '#0B1220',
-    borderWidth: 1,
-    borderColor: '#172033',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  historyIndicator: {
-    width: 4,
-    height: 35,
-    borderRadius: 10,
-    marginRight: 11,
-  },
-
-  historyTime: {
-    color: '#64748B',
     fontSize: 9,
-  },
-
-  historyData: {
-    color: '#E2E8F0',
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 3,
-  },
-
-  historyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-
-  historyBadgeText: {
-    fontSize: 8,
-    fontWeight: '900',
-  },
-
-  emergency: {
-    marginHorizontal: 20,
-    marginTop: 24,
-    padding: 15,
-    borderRadius: 19,
-    backgroundColor: '#250A0A',
-    borderWidth: 1,
-    borderColor: '#7F1D1D',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  emergencyIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
-    backgroundColor: '#450A0A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 11,
-  },
-
-  emergencyTitle: {
-    color: '#F87171',
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-
-  emergencyText: {
-    color: '#F8FAFC',
-    fontSize: 13,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-
-  callIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#991B1B',
-    alignItems: 'center',
-    justifyContent: 'center',
+    lineHeight: 14,
+    marginLeft: 8,
   },
 });

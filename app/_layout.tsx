@@ -8,109 +8,174 @@ export default function Layout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
+
         tabBarStyle: styles.tabBar,
+        tabBarItemStyle: styles.tabItem,
+
+        tabBarActiveTintColor: '#22C55E',
+        tabBarInactiveTintColor: '#94A3B8',
       }}
     >
-      {/* 1. TELA DE SENSOR (HOME) */}
+      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Home',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
-              <MaterialIcons name="home" size={26} color={focused ? '#22C55E' : '#94A3B8'} />
+              <MaterialIcons
+                name="home"
+                size={26}
+                color={focused ? '#22C55E' : '#94A3B8'}
+              />
             </View>
           ),
         }}
       />
 
-      {/* 2. DASHBOARD GERAL (NOVA ABA ADICIONADA) */}
+      {/* LEVANTAMENTO */}
       <Tabs.Screen
-        name="dashboard"
+        name="levantamento"
         options={{
+          title: 'Levantamento',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
-              <MaterialIcons name="bar-chart" size={26} color={focused ? '#22C55E' : '#94A3B8'} />
+              <MaterialIcons
+                name="assignment"
+                size={26}
+                color={focused ? '#22C55E' : '#94A3B8'}
+              />
             </View>
           ),
         }}
       />
 
-      {/* 3. HISTÓRICO */}
+      {/* HISTÓRICO */}
       <Tabs.Screen
         name="historico"
         options={{
+          title: 'Histórico',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
-              <MaterialIcons name="history" size={26} color={focused ? '#22C55E' : '#94A3B8'} />
+              <MaterialIcons
+                name="history"
+                size={26}
+                color={focused ? '#22C55E' : '#94A3B8'}
+              />
             </View>
           ),
         }}
       />
 
-      {/* 4. GUIA IA CENTRAL */}
+      {/* IA */}
       <Tabs.Screen
         name="ia"
         options={{
+          title: 'IA',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
-              <MaterialIcons name="smart-toy" size={26} color={focused ? '#22C55E' : '#94A3B8'} />
+              <MaterialIcons
+                name="smart-toy"
+                size={26}
+                color={focused ? '#22C55E' : '#94A3B8'}
+              />
             </View>
           ),
         }}
       />
 
-      {/* 5. CONFIGURAÇÕES */}
+      {/* CONFIGURAÇÕES */}
       <Tabs.Screen
         name="configuracoes"
         options={{
+          title: 'Configurações',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
-              <MaterialIcons name="settings" size={26} color={focused ? '#22C55E' : '#94A3B8'} />
+              <MaterialIcons
+                name="settings"
+                size={26}
+                color={focused ? '#22C55E' : '#94A3B8'}
+              />
             </View>
           ),
+        }}
+      />
+
+      {/* DASHBOARD — NÃO APARECE NAS ABAS */}
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
   );
 }
+
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 20, // Ajuste de altura responsivo
-    left: 15,
-    right: 15,
-    height: 70,
+
+    left: 12,
+    right: 12,
+
+    bottom: Platform.OS === 'ios' ? 25 : 18,
+
+    height: 68,
+
     backgroundColor: '#0F172A',
-    borderRadius: 25,
+
+    borderRadius: 22,
+
     borderTopWidth: 0,
-    paddingBottom: 0,
 
-    // Alinhamento horizontal simétrico adaptado para 5 botões
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+    paddingVertical: 5,
 
-    // Sombra premium tridimensional
+    margin: 0,
+
+    elevation: 12,
+
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+
+  tabItem: {
+    flex: 1,
+
+    height: 58,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    margin: 0,
+    padding: 0,
   },
 
   icon: {
+    width: 48,
+    height: 48,
+
     alignItems: 'center',
     justifyContent: 'center',
-    width: 50,
-    height: 50,
+
+    borderRadius: 15,
   },
 
   activeIcon: {
+    width: 48,
+    height: 48,
+
     alignItems: 'center',
     justifyContent: 'center',
-    width: 50,
-    height: 50,
-    backgroundColor: '#1E293B', // Caixinha de destaque para o botão ativo
-    borderRadius: 14,
+
+    backgroundColor: '#1E293B',
+
+    borderRadius: 15,
   },
 });

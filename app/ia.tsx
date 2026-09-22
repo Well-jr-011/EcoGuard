@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   ActivityIndicator,
@@ -30,7 +35,6 @@ type Leitura = {
   fumaca: number;
   fogo: boolean;
   temperatura: number;
-  umidadeSolo: number;
   status: string;
   created_at: string;
 };
@@ -62,10 +66,10 @@ const mensagensIniciais: Mensagem[] = [
     tipo: 'ia',
     texto:
       'Olá! Eu sou a EcoGuard IA. 🌱\n\n' +
-      'Posso ajudar você a entender as leituras do sistema, ' +
-      'fumaça, fogo, temperatura, umidade do solo, riscos ' +
-      'de incêndio, prevenção e segurança.\n\n' +
-      'Faça sua pergunta abaixo.',
+      'Posso ajudar você a interpretar as leituras do sistema, ' +
+      'fumaça, fogo, temperatura, riscos de incêndio, prevenção ' +
+      'e funcionamento do EcoGuard.\n\n' +
+      'Faça uma pergunta ou escolha uma das opções abaixo.',
     hora: obterHora(),
   },
 ];
@@ -80,8 +84,7 @@ const sugestoesPadrao: string[] = [
 function calcularStatus(
   fumaca: number,
   fogo: boolean,
-  temperatura: number,
-  umidadeSolo: number
+  temperatura: number
 ): string {
   if (
     fogo ||
@@ -93,13 +96,22 @@ function calcularStatus(
 
   if (
     fumaca >= 40 ||
-    temperatura >= 40 ||
-    umidadeSolo <= 30
+    temperatura >= 40
   ) {
     return 'ATENÇÃO';
   }
 
   return 'SEGURO';
+}
+
+function interpretarFogo(valor: unknown): boolean {
+  return (
+    valor === true ||
+    valor === 1 ||
+    valor === '1' ||
+    valor === 'true' ||
+    valor === 'TRUE'
+  );
 }
 
 function gerarResposta(
@@ -108,18 +120,15 @@ function gerarResposta(
 ): string {
   const pergunta = normalizar(perguntaOriginal);
 
-  const fumaca = leitura?.fumaca ?? null;
+  const fumaca = leitura?.fumaca ?? 0;
   const fogo = leitura?.fogo ?? false;
-  const temperatura = leitura?.temperatura ?? null;
-  const umidadeSolo = leitura?.umidadeSolo ?? null;
+  const temperatura = leitura?.temperatura ?? 0;
 
   const status = leitura
-    ? leitura.status ||
-      calcularStatus(
+    ? calcularStatus(
         leitura.fumaca,
         leitura.fogo,
-        leitura.temperatura,
-        leitura.umidadeSolo
+        leitura.temperatura
       )
     : null;
 
@@ -136,7 +145,7 @@ function gerarResposta(
       'Olá! 👋🌱\n\n' +
       'Estou pronta para ajudar com o EcoGuard.\n\n' +
       'Você pode perguntar sobre fumaça, fogo, temperatura, ' +
-      'umidade do solo, risco de incêndio ou sobre o funcionamento do sistema.'
+      'risco de incêndio, prevenção ou funcionamento do sistema.'
     );
   }
 
@@ -170,14 +179,16 @@ function gerarResposta(
   if (
     pergunta.includes('quem e voce') ||
     pergunta.includes('o que voce faz') ||
-    pergunta.includes('para que voce serve')
+    pergunta.includes('para que voce serve') ||
+    pergunta.includes('o que voce e')
   ) {
     return (
       '🤖 ECOGUARD IA\n\n' +
       'Sou o assistente inteligente do EcoGuard.\n\n' +
-      'Posso interpretar as leituras do sistema e explicar ' +
-      'situações relacionadas a fumaça, fogo, temperatura, ' +
-      'umidade do solo, prevenção e segurança.'
+      'Posso interpretar as leituras do sistema e explicar situações ' +
+      'relacionadas a fumaça, fogo, temperatura, prevenção e segurança.\n\n' +
+      'Neste momento, minhas respostas são baseadas nas regras e dados ' +
+      'do próprio sistema.'
     );
   }
 
@@ -187,14 +198,25 @@ function gerarResposta(
 
   if (
     pergunta.includes('como esta') ||
+    pergunta.includes('como esta o') ||
+    pergunta.includes('como está') ||
     pergunta.includes('situacao') ||
+    pergunta.includes('situacao atual') ||
     pergunta.includes('status') ||
-    pergunta.includes('ambiente')
+    pergunta.includes('ambiente') ||
+    pergunta.includes('condicao') ||
+    pergunta.includes('condicoes') ||
+    pergunta.includes('estado atual') ||
+    pergunta.includes('esta tudo bem') ||
+    pergunta.includes('esta tudo certo') ||
+    pergunta.includes('esta seguro') ||
+    pergunta.includes('esta segura')
   ) {
     if (!leitura) {
       return (
-        '📡 Não encontrei uma leitura recente.\n\n' +
-        'Verifique se os dados estão chegando na tabela "leituras" do Supabase.'
+        '📡 NÃO HÁ LEITURA DISPONÍVEL\n\n' +
+        'Não encontrei uma leitura recente no sistema.\n\n' +
+        'Verifique se o ESP8266 está conectado e enviando dados para o Supabase.'
       );
     }
 
@@ -203,10 +225,9 @@ function gerarResposta(
       `Status: ${status}\n\n` +
       `🌫️ Fumaça: ${fumaca}%\n` +
       `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n` +
-      `🌱 Umidade do solo: ${umidadeSolo}%\n\n` +
+      `🌡️ Temperatura: ${temperatura}°C\n\n` +
       (status === 'CRÍTICO'
-        ? '🚨 A situação é crítica. Priorize sua segurança.'
+        ? '🚨 A situação é crítica. Afaste-se da área de risco e priorize sua segurança.'
         : status === 'ATENÇÃO'
           ? '⚠️ Existem condições que precisam de acompanhamento.'
           : '✅ As condições atuais estão dentro da faixa segura.')
@@ -219,10 +240,14 @@ function gerarResposta(
 
   if (
     pergunta.includes('fumaca') ||
+    pergunta.includes('fumaça') ||
     pergunta.includes('nivel de fumaca') ||
-    pergunta.includes('quantidade de fumaca')
+    pergunta.includes('quantidade de fumaca') ||
+    pergunta.includes('quanto de fumaca') ||
+    pergunta.includes('muita fumaca') ||
+    pergunta.includes('tem fumaca')
   ) {
-    if (fumaca === null) {
+    if (!leitura) {
       return (
         '🌫️ Ainda não tenho uma leitura de fumaça disponível.'
       );
@@ -235,9 +260,9 @@ function gerarResposta(
       '• 40% a 69% → Atenção\n' +
       '• 70% ou mais → Crítico\n\n' +
       (fumaca >= 70
-        ? '🚨 O nível atual é crítico. Afaste-se de fumaça ou fogo e verifique a situação somente se for seguro.'
+        ? '🚨 O nível atual é crítico. Afaste-se de fumaça ou fogo e procure um local seguro.'
         : fumaca >= 40
-          ? '⚠️ O nível está elevado. Continue monitorando.'
+          ? '⚠️ O nível está elevado. Continue monitorando o ambiente.'
           : '✅ O nível atual está dentro da faixa segura.')
     );
   }
@@ -265,9 +290,9 @@ function gerarResposta(
       'No EcoGuard:\n\n' +
       '40% ou mais → Atenção\n' +
       '70% ou mais → Crítico\n\n' +
-      (fumaca !== null
-        ? `A leitura atual é ${fumaca}%.`
-        : 'Ainda não existe uma leitura disponível.')
+      (!leitura
+        ? 'Ainda não existe uma leitura disponível.'
+        : `A leitura atual é ${fumaca}%.`)
     );
   }
 
@@ -278,7 +303,10 @@ function gerarResposta(
   if (
     pergunta.includes('fogo') ||
     pergunta.includes('tem fogo') ||
-    pergunta.includes('detectou fogo')
+    pergunta.includes('detectou fogo') ||
+    pergunta.includes('chama') ||
+    pergunta.includes('tem chama') ||
+    pergunta.includes('chamas')
   ) {
     if (!leitura) {
       return (
@@ -342,8 +370,8 @@ function gerarResposta(
       'Se houver fogo, muita fumaça, explosão ou risco direto à vida:\n\n' +
       '• Afaste-se para um local seguro.\n' +
       '• Não tente investigar de perto.\n' +
-      '• Ligue para o serviço de emergência apropriado.\n\n' +
-      'Em incêndios, ligue para 193.'
+      '• Não retorne ao local para buscar objetos.\n' +
+      '• Em incêndios, ligue para 193.'
     );
   }
 
@@ -356,7 +384,7 @@ function gerarResposta(
     pergunta.includes('calor') ||
     pergunta.includes('quente')
   ) {
-    if (temperatura === null) {
+    if (!leitura) {
       return (
         '🌡️ Ainda não existe uma leitura atual de temperatura.'
       );
@@ -374,38 +402,18 @@ function gerarResposta(
   }
 
   /*
-   * UMIDADE
-   */
-
-  if (
-    pergunta.includes('umidade do solo') ||
-    pergunta.includes('umidade solo') ||
-    pergunta === 'solo' ||
-    pergunta.includes('terra')
-  ) {
-    if (umidadeSolo === null) {
-      return (
-        '🌱 Ainda não tenho uma leitura atual da umidade do solo.'
-      );
-    }
-
-    return (
-      '🌱 UMIDADE DO SOLO\n\n' +
-      `A leitura atual é ${umidadeSolo}%.\n\n` +
-      (umidadeSolo <= 30
-        ? '⚠️ A umidade está baixa e contribui para o estado de atenção.'
-        : '✅ A umidade está acima do limite de atenção.')
-    );
-  }
-
-  /*
    * RISCO
    */
 
   if (
     pergunta.includes('risco') ||
     pergunta.includes('perigo') ||
-    pergunta.includes('nivel de risco')
+    pergunta.includes('nivel de risco') ||
+    pergunta.includes('corre risco') ||
+    pergunta.includes('e perigoso') ||
+    pergunta.includes('é perigoso') ||
+    pergunta.includes('devo me preocupar') ||
+    pergunta.includes('preciso me preocupar')
   ) {
     if (!leitura) {
       return (
@@ -418,8 +426,12 @@ function gerarResposta(
       `Status: ${status}\n\n` +
       `🌫️ Fumaça: ${fumaca}%\n` +
       `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n` +
-      `🌱 Solo: ${umidadeSolo}%`
+      `🌡️ Temperatura: ${temperatura}°C\n\n` +
+      (status === 'CRÍTICO'
+        ? '🚨 Existe pelo menos uma condição crítica.'
+        : status === 'ATENÇÃO'
+          ? '⚠️ Existe pelo menos uma condição de atenção.'
+          : '✅ Nenhuma condição crítica ou de atenção foi identificada.')
     );
   }
 
@@ -429,7 +441,8 @@ function gerarResposta(
 
   if (
     pergunta.includes('por que esta critico') ||
-    pergunta.includes('porque esta critico')
+    pergunta.includes('porque esta critico') ||
+    pergunta.includes('por que esta assim')
   ) {
     if (!leitura) {
       return (
@@ -510,23 +523,29 @@ function gerarResposta(
   ) {
     return (
       '📡 SENSORES\n\n' +
-      'Os sensores coletam informações do ambiente e essas informações podem ser enviadas para o sistema EcoGuard.\n\n' +
-      'O aplicativo utiliza essas leituras para acompanhar condições de risco.'
+      'O EcoGuard utiliza sensores para coletar informações do ambiente.\n\n' +
+      'No sistema atual, as principais informações monitoradas são:\n\n' +
+      '🌫️ Nível de fumaça\n' +
+      '🔥 Detecção de fogo\n' +
+      '🌡️ Temperatura\n\n' +
+      'Esses dados são enviados para o sistema e apresentados no aplicativo.'
     );
   }
 
   /*
-   * ARDUINO
+   * ARDUINO / ESP8266
    */
 
   if (
     pergunta.includes('arduino') ||
+    pergunta.includes('esp8266') ||
     pergunta.includes('placa')
   ) {
     return (
-      '🔌 ARDUINO\n\n' +
-      'O Arduino é responsável pela coleta das informações dos sensores no projeto EcoGuard.\n\n' +
-      'Depois que os dados são enviados ao sistema, o aplicativo consegue apresentar as leituras.'
+      '🔌 ESP8266\n\n' +
+      'O ESP8266 funciona como o controlador do sistema de sensores.\n\n' +
+      'Ele recebe os dados dos sensores, conecta-se ao Wi-Fi e envia as leituras para o Supabase.\n\n' +
+      'Depois disso, o EcoGuard consegue apresentar essas informações no aplicativo.'
     );
   }
 
@@ -541,7 +560,12 @@ function gerarResposta(
     return (
       '☁️ SUPABASE\n\n' +
       'O Supabase funciona como a camada de armazenamento de dados do EcoGuard.\n\n' +
-      'A tabela "leituras" pode armazenar informações como fumaça, fogo, temperatura, umidade do solo, status e horário.'
+      'A tabela "leituras" armazena informações como:\n\n' +
+      '🌫️ Fumaça\n' +
+      '🔥 Fogo\n' +
+      '🌡️ Temperatura\n' +
+      '📊 Status\n' +
+      '🕒 Data e horário'
     );
   }
 
@@ -556,8 +580,8 @@ function gerarResposta(
   ) {
     return (
       '⚡ TEMPO REAL\n\n' +
-      'O EcoGuard pode utilizar o Supabase Realtime para receber novas leituras automaticamente.\n\n' +
-      'Quando uma nova leitura chega ao banco, as telas podem atualizar os dados.'
+      'O EcoGuard utiliza o Supabase Realtime para acompanhar novas leituras.\n\n' +
+      'Quando o ESP8266 envia um novo registro, o aplicativo pode receber essa atualização automaticamente.'
     );
   }
 
@@ -572,7 +596,7 @@ function gerarResposta(
     return (
       '📋 HISTÓRICO\n\n' +
       'A tela Histórico permite acompanhar os registros enviados pelo sistema.\n\n' +
-      'Assim você pode observar como as condições ambientais mudaram ao longo do tempo.'
+      'Assim você consegue observar como as condições ambientais mudaram ao longo do tempo.'
     );
   }
 
@@ -586,8 +610,8 @@ function gerarResposta(
   ) {
     return (
       '📲 WHATSAPP\n\n' +
-      'O EcoGuard pode abrir o WhatsApp com uma mensagem de alerta preparada.\n\n' +
-      'Para isso, é necessário cadastrar corretamente o telefone de emergência nas configurações.'
+      'O EcoGuard pode preparar uma mensagem de alerta para ser enviada pelo WhatsApp.\n\n' +
+      'Para isso, o telefone de emergência precisa estar cadastrado corretamente nas configurações.'
     );
   }
 
@@ -601,8 +625,8 @@ function gerarResposta(
   ) {
     return (
       '🔔 NOTIFICAÇÕES\n\n' +
-      'As notificações podem informar quando uma condição de risco é identificada.\n\n' +
-      'Dependendo do ambiente Expo utilizado, alguns recursos de notificação podem exigir um development build.'
+      'As notificações podem avisar quando uma condição de risco é identificada.\n\n' +
+      'Elas funcionam como uma camada adicional de alerta e não substituem os serviços de emergência.'
     );
   }
 
@@ -616,8 +640,8 @@ function gerarResposta(
   ) {
     return (
       '🔊 ALARME\n\n' +
-      'O EcoGuard pode utilizar alertas sonoros quando uma condição crítica é detectada.\n\n' +
-      'O alarme não substitui a comunicação com os serviços de emergência.'
+      'O EcoGuard pode utilizar um alerta sonoro quando uma condição crítica é detectada.\n\n' +
+      'O alarme serve como aviso e não substitui a comunicação com os serviços de emergência.'
     );
   }
 
@@ -787,7 +811,6 @@ function gerarResposta(
       `🌫️ Fumaça: ${fumaca}%\n` +
       `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
       `🌡️ Temperatura: ${temperatura}°C\n` +
-      `🌱 Umidade do solo: ${umidadeSolo}%\n` +
       `📊 Status: ${status}\n\n` +
       `🕒 ${new Date(
         leitura.created_at
@@ -805,15 +828,15 @@ function gerarResposta(
     pergunta.includes('perguntas')
   ) {
     return (
-      '💡 POSSO RESPONDER SOBRE:\n\n' +
+      '💡 POSSO AJUDAR COM:\n\n' +
       '🌫️ Fumaça\n' +
       '🔥 Fogo e incêndios\n' +
       '🌡️ Temperatura\n' +
-      '🌱 Umidade do solo\n' +
       '📊 Status e risco\n' +
       '📡 Sensores\n' +
-      '🔌 Arduino\n' +
+      '🔌 ESP8266\n' +
       '☁️ Supabase\n' +
+      '⚡ Tempo real\n' +
       '🚒 Bombeiros e 193\n' +
       '🛡️ Prevenção e segurança'
     );
@@ -831,7 +854,7 @@ function gerarResposta(
     return (
       '🌱 ECOGUARD\n\n' +
       'O EcoGuard é um sistema de monitoramento ambiental desenvolvido para acompanhar condições que podem indicar risco de incêndio.\n\n' +
-      'Ele combina sensores, armazenamento de dados e uma interface mobile.'
+      'Ele combina sensores, ESP8266, armazenamento de dados e uma interface para acompanhamento das leituras.'
     );
   }
 
@@ -839,16 +862,29 @@ function gerarResposta(
    * RESPOSTA PADRÃO
    */
 
+  if (
+    pergunta.includes('bom') ||
+    pergunta.includes('normal') ||
+    pergunta.includes('seguro') ||
+    pergunta.includes('tranquilo') ||
+    pergunta.includes('preocup') ||
+    pergunta.includes('agora')
+  ) {
+    if (!leitura) {
+      return '📡 Ainda não recebi uma leitura recente do ESP8266. Verifique a conexão e o envio para o Supabase.';
+    }
+    return `📊 ANALISE ATUAL\n\nStatus: ${status}\n🌫️ Fumaça: ${fumaca}%\n🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n🌡️ Temperatura: ${temperatura}°C\n\n${status === 'CRÍTICO' ? '🚨 Existe uma condição crítica. Afaste-se da área de risco e, se necessário, ligue para 193.' : status === 'ATENÇÃO' ? '⚠️ Há uma condição que merece acompanhamento.' : '✅ As leituras estão dentro da faixa segura definida pelo EcoGuard.'}`;
+  }
+
   return (
     '🤖 Ainda não encontrei uma resposta específica para essa pergunta.\n\n' +
     'Tente perguntar sobre:\n\n' +
     '🌫️ fumaça\n' +
     '🔥 fogo\n' +
     '🌡️ temperatura\n' +
-    '🌱 umidade do solo\n' +
     '📊 risco\n' +
     '📡 sensores\n' +
-    '🔌 Arduino\n' +
+    '🔌 ESP8266\n' +
     '☁️ Supabase\n' +
     '🚒 Bombeiros\n' +
     '🛡️ segurança'
@@ -891,7 +927,10 @@ export default function EcoGuardIA() {
     try {
       const resultado = await supabase
         .from('leituras')
-        .select('*')
+        .select(
+          'valor_fumaca, fogo, temperatura, status, created_at'
+        )
+        .eq('sensor_id', 1)
         .order('created_at', {
           ascending: false,
         })
@@ -908,32 +947,26 @@ export default function EcoGuardIA() {
       }
 
       if (!resultado.data) {
+        setLeituraAtual(null);
         return null;
       }
 
-      const dados = resultado.data as Record<
-        string,
-        unknown
-      >;
+      const dados =
+        resultado.data as Record<
+          string,
+          unknown
+        >;
 
       const fumaca = Number(
-        dados.valor_fumaca ??
-        dados.fumaca ??
-        0
+        dados.valor_fumaca ?? 0
       );
 
-      const fogo = Boolean(
-        dados.fogo ?? false
+      const fogo = interpretarFogo(
+        dados.fogo
       );
 
       const temperatura = Number(
         dados.temperatura ?? 0
-      );
-
-      const umidadeSolo = Number(
-        dados.umidade_solo ??
-        dados.umidadeSolo ??
-        0
       );
 
       const statusBanco =
@@ -950,14 +983,12 @@ export default function EcoGuardIA() {
         fumaca,
         fogo,
         temperatura,
-        umidadeSolo,
         status:
           statusBanco ||
           calcularStatus(
             fumaca,
             fogo,
-            temperatura,
-            umidadeSolo
+            temperatura
           ),
         created_at: createdAt,
       };
@@ -978,7 +1009,8 @@ export default function EcoGuardIA() {
   async function perguntarIA(
     pergunta: string
   ): Promise<void> {
-    const perguntaLimpa = pergunta.trim();
+    const perguntaLimpa =
+      pergunta.trim();
 
     if (
       !perguntaLimpa ||
@@ -995,7 +1027,9 @@ export default function EcoGuardIA() {
     };
 
     setMensagens(
-      (anterior: Mensagem[]): Mensagem[] => [
+      (
+        anterior: Mensagem[]
+      ): Mensagem[] => [
         ...anterior,
         mensagemUsuario,
       ]
@@ -1022,7 +1056,9 @@ export default function EcoGuardIA() {
       };
 
       setMensagens(
-        (anterior: Mensagem[]): Mensagem[] => [
+        (
+          anterior: Mensagem[]
+        ): Mensagem[] => [
           ...anterior,
           mensagemIA,
         ]
@@ -1048,7 +1084,9 @@ export default function EcoGuardIA() {
       };
 
       setMensagens(
-        (anterior: Mensagem[]): Mensagem[] => [
+        (
+          anterior: Mensagem[]
+        ): Mensagem[] => [
           ...anterior,
           mensagemErro,
         ]
@@ -1088,6 +1126,16 @@ export default function EcoGuardIA() {
       },
     ]);
   }
+
+  const statusAtual =
+    leituraAtual?.status || 'SEGURO';
+
+  const corStatus =
+    statusAtual === 'CRÍTICO'
+      ? '#EF4444'
+      : statusAtual === 'ATENÇÃO'
+        ? '#F59E0B'
+        : '#22C55E';
 
   return (
     <KeyboardAvoidingView
@@ -1129,7 +1177,7 @@ export default function EcoGuardIA() {
               <View style={styles.onlineDot} />
 
               <Text style={styles.onlineText}>
-                IA local • sem API paga
+                ASSISTENTE LOCAL
               </Text>
             </View>
           </View>
@@ -1151,6 +1199,139 @@ export default function EcoGuardIA() {
           Assistente ambiental do EcoGuard
         </Text>
       </LinearGradient>
+
+      {leituraAtual && (
+        <View style={styles.liveCard}>
+          <View style={styles.liveHeader}>
+            <View style={styles.liveTitleArea}>
+              <View
+                style={[
+                  styles.liveIcon,
+                  {
+                    backgroundColor:
+                      `${corStatus}18`,
+                  },
+                ]}
+              >
+                <MaterialIcons
+                  name="sensors"
+                  size={19}
+                  color={corStatus}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.liveTitle}>
+                  LEITURA ATUAL
+                </Text>
+
+                <Text style={styles.liveSubtitle}>
+                  Estação 01 • Supabase
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor:
+                    `${corStatus}18`,
+                  borderColor:
+                    `${corStatus}35`,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor:
+                      corStatus,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  {
+                    color: corStatus,
+                  },
+                ]}
+              >
+                {statusAtual}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.metricsRow}>
+            <View style={styles.metric}>
+              <MaterialIcons
+                name="cloud"
+                size={17}
+                color="#94A3B8"
+              />
+
+              <Text style={styles.metricValue}>
+                {leituraAtual.fumaca}%
+              </Text>
+
+              <Text style={styles.metricLabel}>
+                FUMAÇA
+              </Text>
+            </View>
+
+            <View style={styles.metricDivider} />
+
+            <View style={styles.metric}>
+              <MaterialIcons
+                name="thermostat"
+                size={17}
+                color="#94A3B8"
+              />
+
+              <Text style={styles.metricValue}>
+                {leituraAtual.temperatura}°
+              </Text>
+
+              <Text style={styles.metricLabel}>
+                TEMPERATURA
+              </Text>
+            </View>
+
+            <View style={styles.metricDivider} />
+
+            <View style={styles.metric}>
+              <MaterialIcons
+                name="local-fire-department"
+                size={17}
+                color={
+                  leituraAtual.fogo
+                    ? '#EF4444'
+                    : '#94A3B8'
+                }
+              />
+
+              <Text
+                style={[
+                  styles.metricValue,
+                  leituraAtual.fogo &&
+                    styles.fireDetected,
+                ]}
+              >
+                {leituraAtual.fogo
+                  ? 'SIM'
+                  : 'NÃO'}
+              </Text>
+
+              <Text style={styles.metricLabel}>
+                FOGO
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         ref={scrollRef}
@@ -1259,7 +1440,7 @@ export default function EcoGuardIA() {
               <Text
                 style={styles.typingText}
               >
-                Analisando...
+                Analisando leitura...
               </Text>
             </View>
           </View>
@@ -1300,6 +1481,12 @@ export default function EcoGuardIA() {
                     }
                     activeOpacity={0.75}
                   >
+                    <MaterialIcons
+                      name="chat-bubble-outline"
+                      size={14}
+                      color="#22C55E"
+                    />
+
                     <Text
                       style={
                         styles.suggestionText
@@ -1363,7 +1550,7 @@ export default function EcoGuardIA() {
         <Text
           style={styles.footerText}
         >
-          EcoGuard IA • respostas locais • sem chave de API
+          EcoGuard IA • análise local • sem chave de API
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -1431,7 +1618,8 @@ const styles = StyleSheet.create({
   onlineText: {
     color: '#86EFAC',
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
 
   clearButton: {
@@ -1450,6 +1638,106 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 12,
     marginTop: 16,
+  },
+
+  liveCard: {
+    marginHorizontal: 14,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 20,
+    backgroundColor: '#0B1220',
+    borderWidth: 1,
+    borderColor: '#172033',
+  },
+
+  liveHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  liveTitleArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  liveIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  liveTitle: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+
+  liveSubtitle: {
+    color: '#475569',
+    fontSize: 9,
+    marginTop: 3,
+  },
+
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 10,
+    marginRight: 5,
+  },
+
+  statusBadgeText: {
+    fontSize: 8,
+    fontWeight: '900',
+  },
+
+  metricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+
+  metric: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  metricValue: {
+    color: '#F8FAFC',
+    fontSize: 17,
+    fontWeight: '900',
+    marginTop: 3,
+  },
+
+  metricLabel: {
+    color: '#475569',
+    fontSize: 8,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+
+  fireDetected: {
+    color: '#EF4444',
+  },
+
+  metricDivider: {
+    width: 1,
+    height: 31,
+    backgroundColor: '#1E293B',
   },
 
   chat: {
@@ -1572,6 +1860,8 @@ const styles = StyleSheet.create({
   },
 
   suggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#080F1C',
     borderWidth: 1,
     borderColor: '#1E293B',
@@ -1585,6 +1875,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 11,
     fontWeight: '600',
+    marginLeft: 6,
   },
 
   bottomSpace: {

@@ -26,41 +26,59 @@ interface Leitura {
   valor_fumaca: number;
   fogo: boolean;
   temperatura: number;
-  umidade_solo: number;
   status: string;
   created_at: string;
 }
 
-type Filtro = 'TODOS' | 'CRÍTICO' | 'ATENÇÃO' | 'SEGURO';
+type Filtro =
+  | 'TODOS'
+  | 'CRÍTICO'
+  | 'ATENÇÃO'
+  | 'SEGURO';
 
 export default function Historico() {
   const [leituras, setLeituras] = useState<Leitura[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [telefoneSalvo, setTelefoneSalvo] = useState('');
-  const [nomeSalvo, setNomeSalvo] = useState('');
+  const [telefoneSalvo, setTelefoneSalvo] =
+    useState('');
+  const [nomeSalvo, setNomeSalvo] =
+    useState('');
 
-  const [filtro, setFiltro] = useState<Filtro>('TODOS');
+  const [filtro, setFiltro] =
+    useState<Filtro>('TODOS');
 
-  const [atualizando, setAtualizando] = useState(false);
+  const [atualizando, setAtualizando] =
+    useState(false);
 
   useEffect(() => {
     carregarDados();
 
     const canal = supabase
-      .channel('historico_leituras')
+      .channel('historico_estacao_ecoguard')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'leituras',
+          filter: 'sensor_id=eq.1',
         },
-        () => {
+        (payload) => {
+          console.log(
+            '📡 Nova leitura da estação EcoGuard:',
+            payload.new
+          );
+
           carregarLeituras(false);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(
+          '📡 Status Realtime Histórico:',
+          status
+        );
+      });
 
     return () => {
       supabase.removeChannel(canal);
@@ -108,7 +126,18 @@ export default function Historico() {
 
       const { data, error } = await supabase
         .from('leituras')
-        .select('*')
+        .select(
+          `
+            id,
+            sensor_id,
+            valor_fumaca,
+            fogo,
+            temperatura,
+            status,
+            created_at
+          `
+        )
+        .eq('sensor_id', 1)
         .order('created_at', {
           ascending: false,
         })
@@ -127,40 +156,34 @@ export default function Historico() {
                 0
             );
 
-            const fogo = Boolean(
-              item.fogo ?? false
-            );
-
             const temperatura = Number(
               item.temperatura ?? 0
             );
 
-            const solo = Number(
-              item.umidade_solo ?? 0
-            );
+            const fogo =
+              item.fogo === true ||
+              item.fogo === 'true' ||
+              item.fogo === 1 ||
+              item.fogo === '1';
+
+            /*
+             * O status é calculado novamente aqui
+             * para manter a mesma regra do EcoGuard.
+             */
+            const status =
+              calcularStatus(
+                fumaca,
+                fogo,
+                temperatura
+              );
 
             return {
               id: item.id,
-
               valor_fumaca: fumaca,
-
               fogo,
-
               temperatura,
-
-              umidade_solo: solo,
-
-              status:
-                item.status ??
-                calcularStatus(
-                  fumaca,
-                  fogo,
-                  temperatura,
-                  solo
-                ),
-
-              created_at:
-                item.created_at,
+              status,
+              created_at: item.created_at,
             };
           });
 
@@ -185,8 +208,7 @@ export default function Historico() {
   function calcularStatus(
     fumaca: number,
     fogo: boolean,
-    temperatura: number,
-    solo: number
+    temperatura: number
   ) {
     if (
       fogo ||
@@ -198,8 +220,7 @@ export default function Historico() {
 
     if (
       fumaca >= 40 ||
-      temperatura >= 40 ||
-      solo <= 30
+      temperatura >= 40
     ) {
       return 'ATENÇÃO';
     }
@@ -208,23 +229,37 @@ export default function Historico() {
   }
 
   function obterCorStatus(status: string) {
-    if (status === 'CRÍTICO') {
+    if (
+      status === 'CRÍTICO' ||
+      status === 'CRITICO'
+    ) {
       return '#EF4444';
     }
 
-    if (status === 'ATENÇÃO') {
+    if (
+      status === 'ATENÇÃO' ||
+      status === 'ATENCAO'
+    ) {
       return '#F59E0B';
     }
 
     return '#22C55E';
   }
 
-  function obterIconeStatus(status: string) {
-    if (status === 'CRÍTICO') {
+  function obterIconeStatus(
+    status: string
+  ) {
+    if (
+      status === 'CRÍTICO' ||
+      status === 'CRITICO'
+    ) {
       return 'warning';
     }
 
-    if (status === 'ATENÇÃO') {
+    if (
+      status === 'ATENÇÃO' ||
+      status === 'ATENCAO'
+    ) {
       return 'report-problem';
     }
 
@@ -238,24 +273,31 @@ export default function Historico() {
           (item) => item.status === filtro
         );
 
-  const quantidadeCritica = leituras.filter(
-    (item) => item.status === 'CRÍTICO'
-  ).length;
+  const quantidadeCritica =
+    leituras.filter(
+      (item) =>
+        item.status === 'CRÍTICO'
+    ).length;
 
-  const quantidadeAtencao = leituras.filter(
-    (item) => item.status === 'ATENÇÃO'
-  ).length;
+  const quantidadeAtencao =
+    leituras.filter(
+      (item) =>
+        item.status === 'ATENÇÃO'
+    ).length;
 
-  const quantidadeSegura = leituras.filter(
-    (item) => item.status === 'SEGURO'
-  ).length;
+  const quantidadeSegura =
+    leituras.filter(
+      (item) =>
+        item.status === 'SEGURO'
+    ).length;
 
   const mediaFumaca =
     leituras.length > 0
       ? Math.round(
           leituras.reduce(
             (total, item) =>
-              total + item.valor_fumaca,
+              total +
+              item.valor_fumaca,
             0
           ) / leituras.length
         )
@@ -286,26 +328,30 @@ export default function Historico() {
         nomeSalvo || 'Usuário'
       }\n\n` +
       `📡 *Sistema:* Monitoramento Ambiental IoT\n` +
+      `🏠 *Estação:* Estação EcoGuard\n` +
       `📊 *Total de registros:* ${leituras.length}\n` +
       `🌫️ *Média de fumaça:* ${mediaFumaca}%\n\n` +
       `━━━━━━━━━━━━━━━━━━\n\n`;
 
-    leituras.slice(0, 10).forEach((item) => {
-      relatorio +=
-        `🕒 ${new Date(
-          item.created_at
-        ).toLocaleString('pt-BR')}\n\n` +
-        `🌫️ Fumaça: ${item.valor_fumaca}%\n` +
-        `🔥 Fogo: ${
-          item.fogo
-            ? 'DETECTADO 🚨'
-            : 'Normal'
-        }\n` +
-        `🌡️ Temperatura: ${item.temperatura}°C\n` +
-        `🌱 Umidade do solo: ${item.umidade_solo}%\n` +
-        `📊 Status: ${item.status}\n\n` +
-        `━━━━━━━━━━━━━━━━━━\n\n`;
-    });
+    leituras
+      .slice(0, 10)
+      .forEach((item) => {
+        relatorio +=
+          `🕒 ${new Date(
+            item.created_at
+          ).toLocaleString(
+            'pt-BR'
+          )}\n\n` +
+          `🌫️ Fumaça: ${item.valor_fumaca}%\n` +
+          `🔥 Fogo: ${
+            item.fogo
+              ? 'DETECTADO 🚨'
+              : 'Normal'
+          }\n` +
+          `🌡️ Temperatura: ${item.temperatura}°C\n` +
+          `📊 Status: ${item.status}\n\n` +
+          `━━━━━━━━━━━━━━━━━━\n\n`;
+      });
 
     relatorio +=
       `Relatório gerado automaticamente pelo EcoGuard.`;
@@ -417,7 +463,9 @@ export default function Historico() {
               Resumo do monitoramento
             </Text>
 
-            <Text style={styles.summarySubtitle}>
+            <Text
+              style={styles.summarySubtitle}
+            >
               Últimos registros recebidos
             </Text>
           </View>
@@ -432,7 +480,9 @@ export default function Historico() {
 
         <View style={styles.summaryGrid}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
+            <Text
+              style={styles.summaryNumber}
+            >
               {leituras.length}
             </Text>
 
@@ -509,7 +559,7 @@ export default function Historico() {
         </View>
       </View>
 
-      {/* MÉDIA */}
+      {/* MÉDIA DE FUMAÇA */}
 
       <View style={styles.averageCard}>
         <View style={styles.averageIcon}>
@@ -537,6 +587,40 @@ export default function Historico() {
               : mediaFumaca >= 40
               ? 'Requer atenção'
               : 'Dentro do normal'}
+          </Text>
+        </View>
+      </View>
+
+      {/* ESTAÇÃO */}
+
+      <View style={styles.stationCard}>
+        <View style={styles.stationIcon}>
+          <MaterialIcons
+            name="sensors"
+            size={22}
+            color="#4ADE80"
+          />
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text style={styles.stationTitle}>
+            ESTAÇÃO ECOGUARD
+          </Text>
+
+          <Text style={styles.stationSubtitle}>
+            Uma estação de monitoramento ativa
+          </Text>
+        </View>
+
+        <View style={styles.stationOnline}>
+          <View
+            style={styles.stationOnlineDot}
+          />
+
+          <Text
+            style={styles.stationOnlineText}
+          >
+            ÚNICA
           </Text>
         </View>
       </View>
@@ -576,7 +660,9 @@ export default function Historico() {
               Exportar laudo técnico
             </Text>
 
-            <Text style={styles.exportSubtitle}>
+            <Text
+              style={styles.exportSubtitle}
+            >
               Enviar relatório pelo WhatsApp
             </Text>
           </View>
@@ -597,7 +683,9 @@ export default function Historico() {
             Leituras
           </Text>
 
-          <Text style={styles.sectionSubtitle}>
+          <Text
+            style={styles.sectionSubtitle}
+          >
             {leiturasFiltradas.length} registro(s)
             encontrado(s)
           </Text>
@@ -694,224 +782,250 @@ export default function Historico() {
           </Text>
         </View>
       ) : (
-        leiturasFiltradas.map((item, index) => {
-          const cor = obterCorStatus(
-            item.status
-          );
+        leiturasFiltradas.map(
+          (item, index) => {
+            const cor =
+              obterCorStatus(
+                item.status
+              );
 
-          return (
-            <View
-              key={`${item.id}-${index}`}
-              style={[
-                styles.readingCard,
-                {
-                  borderLeftColor: cor,
-                },
-              ]}
-            >
-              {/* CABEÇALHO */}
-
-              <View style={styles.readingHeader}>
-                <View
-                  style={[
-                    styles.readingIcon,
-                    {
-                      backgroundColor:
-                        cor + '18',
-                    },
-                  ]}
-                >
-                  <MaterialIcons
-                    name={
-                      obterIconeStatus(
-                        item.status
-                      ) as any
-                    }
-                    size={23}
-                    color={cor}
-                  />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.readingStatus}>
-                    {item.status}
-                  </Text>
-
-                  <Text style={styles.readingDate}>
-                    {new Date(
-                      item.created_at
-                    ).toLocaleString('pt-BR')}
-                  </Text>
-                </View>
+            return (
+              <View
+                key={`${item.id}-${index}`}
+                style={[
+                  styles.readingCard,
+                  {
+                    borderLeftColor:
+                      cor,
+                  },
+                ]}
+              >
+                {/* CABEÇALHO */}
 
                 <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor:
-                        cor + '18',
-                    },
-                  ]}
+                  style={styles.readingHeader}
                 >
                   <View
                     style={[
-                      styles.statusDot,
+                      styles.readingIcon,
                       {
-                        backgroundColor: cor,
+                        backgroundColor:
+                          cor + '18',
                       },
                     ]}
-                  />
+                  >
+                    <MaterialIcons
+                      name={
+                        obterIconeStatus(
+                          item.status
+                        ) as any
+                      }
+                      size={23}
+                      color={cor}
+                    />
+                  </View>
+
+                  <View
+                    style={{ flex: 1 }}
+                  >
+                    <Text
+                      style={
+                        styles.readingStatus
+                      }
+                    >
+                      {item.status}
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.readingDate
+                      }
+                    >
+                      {new Date(
+                        item.created_at
+                      ).toLocaleString(
+                        'pt-BR'
+                      )}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor:
+                          cor + '18',
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.statusDot,
+                        {
+                          backgroundColor:
+                            cor,
+                        },
+                      ]}
+                    />
+
+                    <Text
+                      style={[
+                        styles.statusBadgeText,
+                        {
+                          color: cor,
+                        },
+                      ]}
+                    >
+                      {item.status}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* SENSORES */}
+
+                <View
+                  style={
+                    styles.readingSensors
+                  }
+                >
+                  <View
+                    style={styles.sensorBox}
+                  >
+                    <MaterialIcons
+                      name="cloud"
+                      size={18}
+                      color="#38BDF8"
+                    />
+
+                    <Text
+                      style={
+                        styles.sensorBoxLabel
+                      }
+                    >
+                      Fumaça
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.sensorBoxValue
+                      }
+                    >
+                      {item.valor_fumaca}%
+                    </Text>
+                  </View>
+
+                  <View
+                    style={styles.sensorBox}
+                  >
+                    <MaterialIcons
+                      name="local-fire-department"
+                      size={18}
+                      color={
+                        item.fogo
+                          ? '#EF4444'
+                          : '#22C55E'
+                      }
+                    />
+
+                    <Text
+                      style={
+                        styles.sensorBoxLabel
+                      }
+                    >
+                      Fogo
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.sensorBoxValue,
+                        {
+                          color: item.fogo
+                            ? '#EF4444'
+                            : '#22C55E',
+                          fontSize: 13,
+                        },
+                      ]}
+                    >
+                      {item.fogo
+                        ? 'DETECTADO'
+                        : 'NORMAL'}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={styles.sensorBox}
+                  >
+                    <MaterialIcons
+                      name="thermostat"
+                      size={18}
+                      color="#F97316"
+                    />
+
+                    <Text
+                      style={
+                        styles.sensorBoxLabel
+                      }
+                    >
+                      Temperatura
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.sensorBoxValue
+                      }
+                    >
+                      {item.temperatura}°C
+                    </Text>
+                  </View>
+                </View>
+
+                {/* BARRA DE FUMAÇA */}
+
+                <View
+                  style={styles.smokeHeader}
+                >
+                  <Text
+                    style={styles.smokeLabel}
+                  >
+                    Intensidade da fumaça
+                  </Text>
 
                   <Text
                     style={[
-                      styles.statusBadgeText,
+                      styles.smokeValue,
                       {
                         color: cor,
                       },
                     ]}
                   >
-                    {item.status}
-                  </Text>
-                </View>
-              </View>
-
-              {/* SENSORES */}
-
-              <View style={styles.readingSensors}>
-                <View style={styles.sensorBox}>
-                  <MaterialIcons
-                    name="cloud"
-                    size={18}
-                    color="#38BDF8"
-                  />
-
-                  <Text
-                    style={styles.sensorBoxLabel}
-                  >
-                    Fumaça
-                  </Text>
-
-                  <Text
-                    style={styles.sensorBoxValue}
-                  >
                     {item.valor_fumaca}%
                   </Text>
                 </View>
 
-                <View style={styles.sensorBox}>
-                  <MaterialIcons
-                    name="local-fire-department"
-                    size={18}
-                    color={
-                      item.fogo
-                        ? '#EF4444'
-                        : '#22C55E'
-                    }
-                  />
-
-                  <Text
-                    style={styles.sensorBoxLabel}
-                  >
-                    Fogo
-                  </Text>
-
-                  <Text
+                <View
+                  style={styles.smokeBar}
+                >
+                  <View
                     style={[
-                      styles.sensorBoxValue,
+                      styles.smokeProgress,
                       {
-                        color: item.fogo
-                          ? '#EF4444'
-                          : '#22C55E',
-                        fontSize: 13,
+                        width: `${Math.min(
+                          Math.max(
+                            item.valor_fumaca,
+                            0
+                          ),
+                          100
+                        )}%`,
+                        backgroundColor:
+                          cor,
                       },
                     ]}
-                  >
-                    {item.fogo
-                      ? 'DETECTADO'
-                      : 'NORMAL'}
-                  </Text>
-                </View>
-
-                <View style={styles.sensorBox}>
-                  <MaterialIcons
-                    name="thermostat"
-                    size={18}
-                    color="#F97316"
                   />
-
-                  <Text
-                    style={styles.sensorBoxLabel}
-                  >
-                    Temperatura
-                  </Text>
-
-                  <Text
-                    style={styles.sensorBoxValue}
-                  >
-                    {item.temperatura}°C
-                  </Text>
-                </View>
-
-                <View style={styles.sensorBox}>
-                  <MaterialIcons
-                    name="water-drop"
-                    size={18}
-                    color="#22C55E"
-                  />
-
-                  <Text
-                    style={styles.sensorBoxLabel}
-                  >
-                    Solo
-                  </Text>
-
-                  <Text
-                    style={styles.sensorBoxValue}
-                  >
-                    {item.umidade_solo}%
-                  </Text>
                 </View>
               </View>
-
-              {/* BARRA DE FUMAÇA */}
-
-              <View style={styles.smokeHeader}>
-                <Text style={styles.smokeLabel}>
-                  Intensidade da fumaça
-                </Text>
-
-                <Text
-                  style={[
-                    styles.smokeValue,
-                    {
-                      color: cor,
-                    },
-                  ]}
-                >
-                  {item.valor_fumaca}%
-                </Text>
-              </View>
-
-              <View style={styles.smokeBar}>
-                <View
-                  style={[
-                    styles.smokeProgress,
-                    {
-                      width: `${Math.min(
-                        Math.max(
-                          item.valor_fumaca,
-                          0
-                        ),
-                        100
-                      )}%`,
-                      backgroundColor: cor,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          );
-        })
+            );
+          }
+        )
       )}
 
       {/* RODAPÉ */}
@@ -924,7 +1038,8 @@ export default function Historico() {
         />
 
         <Text style={styles.footerText}>
-          Dados monitorados pelo sistema EcoGuard
+          Dados monitorados pelo sistema
+          EcoGuard
         </Text>
       </View>
     </ScrollView>
@@ -1120,6 +1235,64 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
 
+  stationCard: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: '#08111F',
+    borderWidth: 1,
+    borderColor: '#172033',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  stationIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    backgroundColor: '#052E16',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
+
+  stationTitle: {
+    color: '#E2E8F0',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+
+  stationSubtitle: {
+    color: '#64748B',
+    fontSize: 9,
+    marginTop: 3,
+  },
+
+  stationOnline: {
+    backgroundColor: '#052E16',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  stationOnlineDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 10,
+    backgroundColor: '#22C55E',
+    marginRight: 5,
+  },
+
+  stationOnlineText: {
+    color: '#4ADE80',
+    fontSize: 7,
+    fontWeight: '900',
+  },
+
   exportButton: {
     marginHorizontal: 20,
     marginTop: 12,
@@ -1269,7 +1442,7 @@ const styles = StyleSheet.create({
   },
 
   sensorBox: {
-    width: '48.5%',
+    width: '31.5%',
     minHeight: 76,
     borderRadius: 14,
     backgroundColor: '#050B14',
