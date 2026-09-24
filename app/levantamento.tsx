@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
     useCallback,
     useEffect,
     useMemo,
@@ -16,7 +16,7 @@ import React, {
     View,
   } from 'react-native';
   
-  import { MaterialIcons } from '@expo/vector-icons';
+  import { MaterialIcons } from '@react-native-vector-icons/material-icons';
   import { LinearGradient } from 'expo-linear-gradient';
   
   import { supabase } from '../src/lib/supabase';
@@ -45,7 +45,7 @@ import React, {
   const MESES = [
     'Janeiro',
     'Fevereiro',
-    'Março',
+    'MarÃ§o',
     'Abril',
     'Maio',
     'Junho',
@@ -58,7 +58,7 @@ import React, {
   ];
   
   // =====================================================
-  // FUNÇÕES AUXILIARES
+  // FUNÃ‡Ã•ES AUXILIARES
   // =====================================================
   
   function numero(valor: unknown): number {
@@ -132,11 +132,11 @@ import React, {
   
   function nomeStatus(status: Status) {
     if (status === 'CRITICO') {
-      return 'CRÍTICO';
+      return 'CRÃTICO';
     }
   
     if (status === 'ATENCAO') {
-      return 'ATENÇÃO';
+      return 'ATENÃ‡ÃƒO';
     }
   
     return 'SEGURO';
@@ -256,7 +256,7 @@ import React, {
           );
   
           setErro(
-            'Não foi possível carregar os dados deste mês.'
+            'NÃ£o foi possÃ­vel carregar os dados deste mÃªs.'
           );
   
           setLeituras([]);
@@ -302,7 +302,7 @@ import React, {
     }, [carregarLeituras]);
   
     // ===================================================
-    // NAVEGAÇÃO DE MESES
+    // NAVEGAÃ‡ÃƒO DE MESES
     // ===================================================
   
     const voltarMes = () => {
@@ -324,7 +324,7 @@ import React, {
     };
   
     // ===================================================
-    // ESTATÍSTICAS
+    // ESTATÃSTICAS
     // ===================================================
   
     const estatisticas = useMemo(() => {
@@ -492,7 +492,7 @@ import React, {
                       styles.logoSubtext
                     }
                   >
-                    ANÁLISE AMBIENTAL
+                    ANÃLISE AMBIENTAL
                   </Text>
                 </View>
               </View>
@@ -513,7 +513,7 @@ import React, {
                     styles.activeText
                   }
                 >
-                  ESTAÇÃO ATIVA
+                  ESTAÃ‡ÃƒO ATIVA
                 </Text>
               </View>
             </View>
@@ -535,14 +535,14 @@ import React, {
                 }
               >
                 Acompanhe o comportamento
-                ambiental da estação ao
-                longo do período analisado.
+                ambiental da estaÃ§Ã£o ao
+                longo do perÃ­odo analisado.
               </Text>
             </View>
           </LinearGradient>
   
           {/* =================================================
-              CONTEÚDO
+              CONTEÃšDO
           ================================================= */}
   
           <View
@@ -553,7 +553,7 @@ import React, {
             ]}
           >
             {/* =================================================
-                PERÍODO
+                PERÃODO
             ================================================= */}
   
             <View
@@ -567,7 +567,7 @@ import React, {
                     styles.smallLabel
                   }
                 >
-                  PERÍODO ANALISADO
+                  PERÃODO ANALISADO
                 </Text>
   
                 <Text
@@ -617,7 +617,7 @@ import React, {
             </View>
   
             {/* =================================================
-                ESTAÇÃO
+                ESTAÃ‡ÃƒO
             ================================================= */}
   
             <View
@@ -647,7 +647,7 @@ import React, {
                     styles.stationName
                   }
                 >
-                  Estação EcoGuard
+                  EstaÃ§Ã£o EcoGuard
                 </Text>
   
                 <Text
@@ -655,7 +655,7 @@ import React, {
                     styles.stationDescription
                   }
                 >
-                  ESP8266 • Monitoramento
+                  ESP8266 â€¢ Monitoramento
                   em tempo real
                 </Text>
               </View>
@@ -670,7 +670,7 @@ import React, {
                     styles.uniqueText
                   }
                 >
-                  ESTAÇÃO 01
+                  ESTAÃ‡ÃƒO 01
                 </Text>
               </View>
             </View>
@@ -737,7 +737,7 @@ import React, {
                     styles.emptyTitle
                   }
                 >
-                  Não foi possível carregar
+                  NÃ£o foi possÃ­vel carregar
                 </Text>
   
                 <Text
@@ -787,7 +787,7 @@ import React, {
                       styles.sectionTitle
                     }
                   >
-                    Resumo do período
+                    Resumo do perÃ­odo
                   </Text>
   
                   <Text
@@ -795,7 +795,7 @@ import React, {
                       styles.sectionSubtitle
                     }
                   >
-                    Visão geral das leituras
+                    VisÃ£o geral das leituras
                     registradas
                   </Text>
                 </View>
@@ -817,25 +817,25 @@ import React, {
   
                   <StatCard
                     icon="warning"
-                    title="Críticos"
+                    title="CrÃ­ticos"
                     value={String(
                       estatisticas.criticos
                     )}
                     subtitle={`${percentual(
                       estatisticas.criticos
-                    )}% do período`}
+                    )}% do perÃ­odo`}
                     color="#EF4444"
                   />
   
                   <StatCard
                     icon="priority-high"
-                    title="Atenção"
+                    title="AtenÃ§Ã£o"
                     value={String(
                       estatisticas.atencao
                     )}
                     subtitle={`${percentual(
                       estatisticas.atencao
-                    )}% do período`}
+                    )}% do perÃ­odo`}
                     color="#F59E0B"
                   />
   
@@ -847,7 +847,7 @@ import React, {
                     )}
                     subtitle={`${percentual(
                       estatisticas.seguros
-                    )}% do período`}
+                    )}% do perÃ­odo`}
                     color="#22C55E"
                   />
                 </View>
@@ -874,7 +874,7 @@ import React, {
                       styles.sectionSubtitle
                     }
                   >
-                    Médias e maiores valores
+                    MÃ©dias e maiores valores
                     registrados
                   </Text>
                 </View>
@@ -886,29 +886,29 @@ import React, {
                 >
                   <IndicatorCard
                     icon="air"
-                    title="Fumaça média"
+                    title="FumaÃ§a mÃ©dia"
                     value={`${estatisticas.mediaFumaca.toFixed(
                       1
                     )}%`}
-                    subtitle={`Máximo: ${estatisticas.maiorFumaca.toFixed(
+                    subtitle={`MÃ¡ximo: ${estatisticas.maiorFumaca.toFixed(
                       1
                     )}%`}
                   />
   
                   <IndicatorCard
                     icon="thermostat"
-                    title="Temperatura média"
+                    title="Temperatura mÃ©dia"
                     value={`${estatisticas.mediaTemperatura.toFixed(
                       1
-                    )}°C`}
-                    subtitle={`Máxima: ${estatisticas.maiorTemperatura.toFixed(
+                    )}Â°C`}
+                    subtitle={`MÃ¡xima: ${estatisticas.maiorTemperatura.toFixed(
                       1
-                    )}°C`}
+                    )}Â°C`}
                   />
   
                   <IndicatorCard
                     icon="water-drop"
-                    title="Umidade média"
+                    title="Umidade mÃ©dia"
                     value={`${estatisticas.mediaUmidade.toFixed(
                       1
                     )}%`}
@@ -917,7 +917,7 @@ import React, {
                 </View>
   
                 {/* =================================================
-                    DISTRIBUIÇÃO
+                    DISTRIBUIÃ‡ÃƒO
                 ================================================= */}
   
                 <View
@@ -930,7 +930,7 @@ import React, {
                       styles.sectionTitle
                     }
                   >
-                    Situação das leituras
+                    SituaÃ§Ã£o das leituras
                   </Text>
   
                   <Text
@@ -938,8 +938,8 @@ import React, {
                       styles.sectionSubtitle
                     }
                   >
-                    Distribuição dos níveis
-                    de segurança
+                    DistribuiÃ§Ã£o dos nÃ­veis
+                    de seguranÃ§a
                   </Text>
                 </View>
   
@@ -961,7 +961,7 @@ import React, {
                   />
   
                   <DistributionRow
-                    label="Atenção"
+                    label="AtenÃ§Ã£o"
                     value={
                       estatisticas.atencao
                     }
@@ -973,7 +973,7 @@ import React, {
                   />
   
                   <DistributionRow
-                    label="Crítico"
+                    label="CrÃ­tico"
                     value={
                       estatisticas.criticos
                     }
@@ -999,7 +999,7 @@ import React, {
                       styles.sectionTitle
                     }
                   >
-                    Registros do período
+                    Registros do perÃ­odo
                   </Text>
   
                   <Text
@@ -1007,8 +1007,8 @@ import React, {
                       styles.sectionSubtitle
                     }
                   >
-                    Últimas leituras recebidas
-                    pela estação
+                    Ãšltimas leituras recebidas
+                    pela estaÃ§Ã£o
                   </Text>
                 </View>
   
@@ -1035,7 +1035,7 @@ import React, {
                         styles.emptyTitle
                       }
                     >
-                      Nenhuma leitura neste mês
+                      Nenhuma leitura neste mÃªs
                     </Text>
   
                     <Text
@@ -1043,7 +1043,7 @@ import React, {
                         styles.emptyText
                       }
                     >
-                      Ainda não existem
+                      Ainda nÃ£o existem
                       registros para{' '}
                       {MESES[mes]} de {ano}.
                     </Text>
@@ -1169,7 +1169,7 @@ import React, {
                                 >
                                   <Metric
                                     icon="air"
-                                    label="Fumaça"
+                                    label="FumaÃ§a"
                                     value={`${fumaca.toFixed(
                                       0
                                     )}%`}
@@ -1180,7 +1180,7 @@ import React, {
                                     label="Temp."
                                     value={`${temperatura.toFixed(
                                       1
-                                    )}°C`}
+                                    )}Â°C`}
                                   />
   
                                   <Metric
@@ -1279,7 +1279,7 @@ import React, {
             )}
   
             {/* =================================================
-                RODAPÉ
+                RODAPÃ‰
             ================================================= */}
   
             <View
@@ -1296,7 +1296,7 @@ import React, {
                   styles.footerText
                 }
               >
-                EcoGuard • Prevenção e
+                EcoGuard â€¢ PrevenÃ§Ã£o e
                 monitoramento de queimadas
               </Text>
             </View>
@@ -1307,7 +1307,7 @@ import React, {
   }
   
   // =====================================================
-  // CARD DE ESTATÍSTICA
+  // CARD DE ESTATÃSTICA
   // =====================================================
   
   function StatCard({
@@ -1431,7 +1431,7 @@ import React, {
   }
   
   // =====================================================
-  // DISTRIBUIÇÃO
+  // DISTRIBUIÃ‡ÃƒO
   // =====================================================
   
   function DistributionRow({
@@ -1529,7 +1529,7 @@ import React, {
   }
   
   // =====================================================
-  // MÉTRICA
+  // MÃ‰TRICA
   // =====================================================
   
   function Metric({
@@ -1706,7 +1706,7 @@ import React, {
     },
   
     // ===================================================
-    // MÊS
+    // MÃŠS
     // ===================================================
   
     monthCard: {
@@ -1755,7 +1755,7 @@ import React, {
     },
   
     // ===================================================
-    // ESTAÇÃO
+    // ESTAÃ‡ÃƒO
     // ===================================================
   
     stationCard: {
@@ -1814,7 +1814,7 @@ import React, {
     },
   
     // ===================================================
-    // SEÇÕES
+    // SEÃ‡Ã•ES
     // ===================================================
   
     sectionHeader: {
@@ -1835,7 +1835,7 @@ import React, {
     },
   
     // ===================================================
-    // ESTATÍSTICAS
+    // ESTATÃSTICAS
     // ===================================================
   
     statsGrid: {
@@ -1947,7 +1947,7 @@ import React, {
     },
   
     // ===================================================
-    // DISTRIBUIÇÃO
+    // DISTRIBUIÃ‡ÃƒO
     // ===================================================
   
     distributionCard: {
@@ -2236,7 +2236,7 @@ import React, {
     },
   
     // ===================================================
-    // RODAPÉ
+    // RODAPÃ‰
     // ===================================================
   
     footer: {
@@ -2255,3 +2255,6 @@ import React, {
       textAlign: 'center',
     },
   });
+
+
+

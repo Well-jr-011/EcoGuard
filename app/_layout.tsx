@@ -1,5 +1,5 @@
-import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+﻿import { Tabs } from 'expo-router';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 
 export default function Layout() {
@@ -50,11 +50,11 @@ export default function Layout() {
         }}
       />
 
-      {/* HISTÓRICO */}
+      {/* HISTÃ“RICO */}
       <Tabs.Screen
         name="historico"
         options={{
-          title: 'Histórico',
+          title: 'HistÃ³rico',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
               <MaterialIcons
@@ -84,11 +84,11 @@ export default function Layout() {
         }}
       />
 
-      {/* CONFIGURAÇÕES */}
+      {/* CONFIGURAÃ‡Ã•ES */}
       <Tabs.Screen
         name="configuracoes"
         options={{
-          title: 'Configurações',
+          title: 'ConfiguraÃ§Ãµes',
           tabBarIcon: ({ focused }) => (
             <View style={focused ? styles.activeIcon : styles.icon}>
               <MaterialIcons
@@ -101,7 +101,7 @@ export default function Layout() {
         }}
       />
 
-      {/* DASHBOARD — NÃO APARECE NAS ABAS */}
+      {/* DASHBOARD â€” NÃƒO APARECE NAS ABAS */}
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -179,3 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
 });
+
+
+

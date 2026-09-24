@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 
 import {
   View,
@@ -9,18 +9,15 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { supabase } from '../src/lib/supabase';
 
 // =====================================================
-// CONFIGURAÇÃO DE CONEXÃO
+// CONFIGURAÃ‡ÃƒO
 // =====================================================
 
-// O ESP8266 envia uma leitura a cada 5 segundos.
-// Se passarem mais de 15 segundos sem uma nova leitura,
-// consideramos que a estação está OFFLINE.
 const TEMPO_MAXIMO_OFFLINE = 15000;
 
 // =====================================================
@@ -46,23 +43,23 @@ export default function Home() {
   const { width } = useWindowDimensions();
 
   const [loading, setLoading] = useState(true);
+  const [montado, setMontado] = useState(false);
   const [atualizando, setAtualizando] = useState(false);
 
   const [ultimaLeitura, setUltimaLeitura] =
     useState<Leitura | null>(null);
 
-  // IMPORTANTE:
-  // Este estado representa o ESP8266,
-  // não apenas a conexão com o Supabase.
   const [conectado, setConectado] = useState(false);
 
   const isDesktop = width >= 900;
 
   // =====================================================
-  // INICIALIZAÇÃO + REALTIME
+  // INICIALIZAÃ‡ÃƒO + REALTIME
   // =====================================================
 
   useEffect(() => {
+    setMontado(true);
+
     carregarUltimaLeitura(true);
 
     const canal = supabase
@@ -77,7 +74,7 @@ export default function Home() {
         },
         (payload) => {
           console.log(
-            '📡 NOVA LEITURA DA ESTAÇÃO:',
+            'ðŸ“¡ NOVA LEITURA DA ESTAÃ‡ÃƒO:',
             payload.new
           );
 
@@ -85,29 +82,19 @@ export default function Home() {
             converterLeitura(payload.new);
 
           setUltimaLeitura(novaLeitura);
-
-          // AQUI SIM sabemos que o ESP8266
-          // acabou de enviar uma leitura.
           setConectado(true);
-
           setAtualizando(false);
         }
       )
       .subscribe((status) => {
         console.log(
-          '📡 Status Realtime:',
+          'ðŸ“¡ Status Realtime:',
           status
         );
 
-        // IMPORTANTE:
-        // SUBSCRIBED significa somente que o
-        // aplicativo conseguiu se inscrever no
-        // Realtime do Supabase.
-        //
-        // NÃO significa que o ESP8266 está online.
         if (status === 'SUBSCRIBED') {
           console.log(
-            '📡 Realtime conectado. Aguardando leitura do ESP8266...'
+            'ðŸ“¡ Realtime conectado. Aguardando leitura do ESP8266...'
           );
         }
 
@@ -117,13 +104,13 @@ export default function Home() {
           status === 'CLOSED'
         ) {
           console.log(
-            '❌ Realtime indisponível.'
+            'âŒ Realtime indisponÃ­vel.'
           );
         }
       });
 
     // ===================================================
-    // VERIFICAR SE O ESP8266 PAROU DE ENVIAR
+    // VERIFICAR CONEXÃƒO DO ESP8266
     // ===================================================
 
     const verificarConexao = setInterval(() => {
@@ -140,11 +127,9 @@ export default function Home() {
         const tempoDaLeitura =
           dataLeitura.getTime();
 
-        if (
-          !Number.isFinite(tempoDaLeitura)
-        ) {
+        if (!Number.isFinite(tempoDaLeitura)) {
           console.log(
-            '⚠️ Data da leitura inválida.'
+            'âš ï¸ Data da leitura invÃ¡lida.'
           );
 
           setConectado(false);
@@ -163,7 +148,7 @@ export default function Home() {
 
         if (!estaOnline) {
           console.log(
-            '🔴 ESP8266 considerado OFFLINE.',
+            'ðŸ”´ ESP8266 considerado OFFLINE.',
             `${Math.round(
               idadeDaLeitura / 1000
             )} segundos sem leitura.`
@@ -185,7 +170,7 @@ export default function Home() {
   }, []);
 
   // =====================================================
-  // CARREGAR ÚLTIMA LEITURA
+  // CARREGAR ÃšLTIMA LEITURA
   // =====================================================
 
   async function carregarUltimaLeitura(
@@ -221,10 +206,6 @@ export default function Home() {
         throw error;
       }
 
-      // =================================================
-      // NENHUMA LEITURA
-      // =================================================
-
       if (!data || data.length === 0) {
         setUltimaLeitura(null);
         setConectado(false);
@@ -236,10 +217,6 @@ export default function Home() {
 
       setUltimaLeitura(leitura);
 
-      // =================================================
-      // VERIFICAR A IDADE DA LEITURA
-      // =================================================
-
       const dataLeitura = new Date(
         leitura.created_at
       );
@@ -247,11 +224,9 @@ export default function Home() {
       const tempoDaLeitura =
         dataLeitura.getTime();
 
-      if (
-        !Number.isFinite(tempoDaLeitura)
-      ) {
+      if (!Number.isFinite(tempoDaLeitura)) {
         console.log(
-          '⚠️ Leitura encontrada, mas a data é inválida.'
+          'âš ï¸ Leitura encontrada, mas a data Ã© invÃ¡lida.'
         );
 
         setConectado(false);
@@ -268,12 +243,12 @@ export default function Home() {
       setConectado(estaOnline);
 
       console.log(
-        '📊 Última leitura:',
+        'ðŸ“Š Ãšltima leitura:',
         leitura
       );
 
       console.log(
-        '⏱️ Idade da leitura:',
+        'â±ï¸ Idade da leitura:',
         Math.round(
           idadeDaLeitura / 1000
         ),
@@ -282,12 +257,12 @@ export default function Home() {
 
       console.log(
         estaOnline
-          ? '🟢 ESP8266 ONLINE'
-          : '🔴 ESP8266 OFFLINE'
+          ? 'ðŸŸ¢ ESP8266 ONLINE'
+          : 'ðŸ”´ ESP8266 OFFLINE'
       );
     } catch (error) {
       console.log(
-        '❌ Erro ao carregar leitura:',
+        'âŒ Erro ao carregar leitura:',
         error
       );
 
@@ -372,14 +347,14 @@ export default function Home() {
       fumaca >= 70 ||
       temperatura >= 60
     ) {
-      return 'CRÍTICO';
+      return 'CRÃTICO';
     }
 
     if (
       fumaca >= 40 ||
       temperatura >= 40
     ) {
-      return 'ATENÇÃO';
+      return 'ATENÃ‡ÃƒO';
     }
 
     return 'SEGURO';
@@ -389,7 +364,6 @@ export default function Home() {
   // STATUS VISUAL
   // =====================================================
 
-  // Se não existe leitura, NÃO mostramos SEGURO.
   const statusAtual =
     ultimaLeitura?.status ??
     'SEM LEITURA';
@@ -404,7 +378,7 @@ export default function Home() {
   // CARREGAMENTO
   // =====================================================
 
-  if (loading) {
+  if (!montado || loading) {
     return (
       <View style={styles.loading}>
         <View style={styles.loadingIcon}>
@@ -453,9 +427,7 @@ export default function Home() {
             styles.contentDesktop,
         ]}
       >
-        {/* =================================================
-            HEADER
-        ================================================= */}
+        {/* HEADER */}
 
         <LinearGradient
           colors={[
@@ -491,7 +463,7 @@ export default function Home() {
                 <Text
                   style={styles.subtitle}
                 >
-                  Prevenção de queimadas
+                  PrevenÃ§Ã£o de queimadas
                 </Text>
               </View>
             </View>
@@ -503,10 +475,6 @@ export default function Home() {
               />
             )}
           </View>
-
-          {/* =================================================
-              CONEXÃO REAL DO ESP8266
-          ================================================= */}
 
           <View
             style={[
@@ -554,9 +522,7 @@ export default function Home() {
           </View>
         </LinearGradient>
 
-        {/* =================================================
-            STATUS PRINCIPAL
-        ================================================= */}
+        {/* STATUS PRINCIPAL */}
 
         <View style={styles.section}>
           <View
@@ -663,7 +629,7 @@ export default function Home() {
               <Text
                 style={styles.statusSmallLabel}
               >
-                SITUAÇÃO ATUAL
+                SITUAÃ‡ÃƒO ATUAL
               </Text>
 
               <Text
@@ -691,9 +657,7 @@ export default function Home() {
           </LinearGradient>
         </View>
 
-        {/* =================================================
-            ALERTA DE FOGO
-        ================================================= */}
+        {/* ALERTA DE FOGO */}
 
         {ultimaLeitura?.fogo && (
           <View style={styles.fireAlert}>
@@ -726,16 +690,14 @@ export default function Home() {
                 }
               >
                 O sensor identificou uma
-                possível chama no ambiente
+                possÃ­vel chama no ambiente
                 monitorado.
               </Text>
             </View>
           </View>
         )}
 
-        {/* =================================================
-            LEITURAS
-        ================================================= */}
+        {/* LEITURAS */}
 
         <View style={styles.section}>
           <View
@@ -769,7 +731,7 @@ export default function Home() {
                   styles.stationMiniText
                 }
               >
-                ESTAÇÃO 01
+                ESTAÃ‡ÃƒO 01
               </Text>
             </View>
           </View>
@@ -782,15 +744,13 @@ export default function Home() {
                   styles.sensorGridDesktop,
               ]}
             >
-              {/* FUMAÇA */}
-
               <SensorCard
                 icon="cloud"
-                title="Fumaça"
+                title="FumaÃ§a"
                 value={`${formatarNumero(
                   ultimaLeitura.valor_fumaca
                 )}%`}
-                description="Nível detectado"
+                description="NÃ­vel detectado"
                 color={
                   ultimaLeitura
                     .valor_fumaca >= 70
@@ -809,14 +769,12 @@ export default function Home() {
                 )}
               />
 
-              {/* TEMPERATURA */}
-
               <SensorCard
                 icon="thermostat"
                 title="Temperatura"
                 value={`${formatarNumero(
                   ultimaLeitura.temperatura
-                )}°C`}
+                )}Â°C`}
                 description="Temperatura atual"
                 color={
                   ultimaLeitura
@@ -839,8 +797,6 @@ export default function Home() {
                 )}
               />
 
-              {/* UMIDADE */}
-
               <SensorCard
                 icon="water-drop"
                 title="Umidade"
@@ -858,8 +814,6 @@ export default function Home() {
                 )}
               />
 
-              {/* FOGO */}
-
               <SensorCard
                 icon="local-fire-department"
                 title="Fogo"
@@ -870,7 +824,7 @@ export default function Home() {
                 }
                 description={
                   ultimaLeitura.fogo
-                    ? 'Atenção imediata'
+                    ? 'AtenÃ§Ã£o imediata'
                     : 'Nenhuma chama detectada'
                 }
                 color={
@@ -910,16 +864,14 @@ export default function Home() {
               <Text
                 style={styles.emptyText}
               >
-                O ESP8266 ainda não enviou
+                O ESP8266 ainda nÃ£o enviou
                 dados para o EcoGuard.
               </Text>
             </View>
           )}
         </View>
 
-        {/* =================================================
-            ÚLTIMA ATUALIZAÇÃO
-        ================================================= */}
+        {/* ÃšLTIMA ATUALIZAÃ‡ÃƒO */}
 
         {ultimaLeitura && (
           <View
@@ -941,7 +893,7 @@ export default function Home() {
               <Text
                 style={styles.updateTitle}
               >
-                Última leitura recebida
+                Ãšltima leitura recebida
               </Text>
 
               <Text
@@ -995,9 +947,7 @@ export default function Home() {
           </View>
         )}
 
-        {/* =================================================
-            RODAPÉ INFORMATIVO
-        ================================================= */}
+        {/* RODAPÃ‰ */}
 
         <View
           style={styles.footerInfo}
@@ -1012,7 +962,7 @@ export default function Home() {
             style={styles.footerText}
           >
             O EcoGuard monitora continuamente
-            as condições ambientais da estação.
+            as condiÃ§Ãµes ambientais da estaÃ§Ã£o.
           </Text>
         </View>
       </View>
@@ -1141,7 +1091,7 @@ function SensorCard({
 }
 
 // =====================================================
-// FORMATAÇÃO
+// FORMATAÃ‡ÃƒO
 // =====================================================
 
 function formatarNumero(
@@ -1169,7 +1119,7 @@ function formatarData(
       dataConvertida.getTime()
     )
   ) {
-    return 'Data indisponível';
+    return 'Data indisponÃ­vel';
   }
 
   return dataConvertida.toLocaleString(
@@ -1193,14 +1143,14 @@ function obterCorStatus(
   status: string
 ) {
   if (
-    status === 'CRÍTICO' ||
+    status === 'CRÃTICO' ||
     status === 'CRITICO'
   ) {
     return '#EF4444';
   }
 
   if (
-    status === 'ATENÇÃO' ||
+    status === 'ATENÃ‡ÃƒO' ||
     status === 'ATENCAO'
   ) {
     return '#F59E0B';
@@ -1219,14 +1169,14 @@ function obterIconeStatus(
   status: string
 ) {
   if (
-    status === 'CRÍTICO' ||
+    status === 'CRÃTICO' ||
     status === 'CRITICO'
   ) {
     return 'warning';
   }
 
   if (
-    status === 'ATENÇÃO' ||
+    status === 'ATENÃ‡ÃƒO' ||
     status === 'ATENCAO'
   ) {
     return 'report-problem';
@@ -1245,26 +1195,26 @@ function obterDescricaoStatus(
   status: string
 ) {
   if (
-    status === 'CRÍTICO' ||
+    status === 'CRÃTICO' ||
     status === 'CRITICO'
   ) {
-    return 'Foi identificado um risco crítico. Verifique o ambiente imediatamente.';
+    return 'Foi identificado um risco crÃ­tico. Verifique o ambiente imediatamente.';
   }
 
   if (
-    status === 'ATENÇÃO' ||
+    status === 'ATENÃ‡ÃƒO' ||
     status === 'ATENCAO'
   ) {
-    return 'Os sensores identificaram condições que merecem atenção.';
+    return 'Os sensores identificaram condiÃ§Ãµes que merecem atenÃ§Ã£o.';
   }
 
   if (
     status === 'SEM LEITURA'
   ) {
-    return 'Ainda não foi recebida nenhuma leitura da estação de monitoramento.';
+    return 'Ainda nÃ£o foi recebida nenhuma leitura da estaÃ§Ã£o de monitoramento.';
   }
 
-  return 'As condições monitoradas estão dentro dos níveis seguros.';
+  return 'As condiÃ§Ãµes monitoradas estÃ£o dentro dos nÃ­veis seguros.';
 }
 
 // =====================================================
@@ -1395,7 +1345,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // SEÇÕES
+  // SEÃ‡Ã•ES
   // ===================================================
 
   section: {
@@ -1690,7 +1640,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // ATUALIZAÇÃO
+  // ATUALIZAÃ‡ÃƒO
   // ===================================================
 
   updateCard: {
@@ -1752,7 +1702,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // RODAPÉ
+  // RODAPÃ‰
   // ===================================================
 
   footerInfo: {
@@ -1771,3 +1721,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
+
+
+
+

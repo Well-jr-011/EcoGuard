@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useEffect,
   useMemo,
   useRef,
@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { supabase } from '../src/lib/supabase';
@@ -65,20 +65,20 @@ const mensagensIniciais: Mensagem[] = [
     id: 'boas-vindas',
     tipo: 'ia',
     texto:
-      'Olá! Eu sou a EcoGuard IA. 🌱\n\n' +
-      'Posso ajudar você a interpretar as leituras do sistema, ' +
-      'fumaça, fogo, temperatura, riscos de incêndio, prevenção ' +
+      'OlÃ¡! Eu sou a EcoGuard IA. ðŸŒ±\n\n' +
+      'Posso ajudar vocÃª a interpretar as leituras do sistema, ' +
+      'fumaÃ§a, fogo, temperatura, riscos de incÃªndio, prevenÃ§Ã£o ' +
       'e funcionamento do EcoGuard.\n\n' +
-      'Faça uma pergunta ou escolha uma das opções abaixo.',
+      'FaÃ§a uma pergunta ou escolha uma das opÃ§Ãµes abaixo.',
     hora: obterHora(),
   },
 ];
 
 const sugestoesPadrao: string[] = [
-  'Como está o ambiente?',
-  'Qual é o nível de fumaça?',
+  'Como estÃ¡ o ambiente?',
+  'Qual Ã© o nÃ­vel de fumaÃ§a?',
   'Tem fogo detectado?',
-  'O que devo fazer em um incêndio?',
+  'O que devo fazer em um incÃªndio?',
 ];
 
 function calcularStatus(
@@ -91,14 +91,14 @@ function calcularStatus(
     fumaca >= 70 ||
     temperatura >= 60
   ) {
-    return 'CRÍTICO';
+    return 'CRÃTICO';
   }
 
   if (
     fumaca >= 40 ||
     temperatura >= 40
   ) {
-    return 'ATENÇÃO';
+    return 'ATENÃ‡ÃƒO';
   }
 
   return 'SEGURO';
@@ -133,7 +133,7 @@ function gerarResposta(
     : null;
 
   /*
-   * SAUDAÇÕES
+   * SAUDAÃ‡Ã•ES
    */
 
   if (
@@ -142,10 +142,10 @@ function gerarResposta(
     )
   ) {
     return (
-      'Olá! 👋🌱\n\n' +
+      'OlÃ¡! ðŸ‘‹ðŸŒ±\n\n' +
       'Estou pronta para ajudar com o EcoGuard.\n\n' +
-      'Você pode perguntar sobre fumaça, fogo, temperatura, ' +
-      'risco de incêndio, prevenção ou funcionamento do sistema.'
+      'VocÃª pode perguntar sobre fumaÃ§a, fogo, temperatura, ' +
+      'risco de incÃªndio, prevenÃ§Ã£o ou funcionamento do sistema.'
     );
   }
 
@@ -156,8 +156,8 @@ function gerarResposta(
     pergunta.includes('agradeco')
   ) {
     return (
-      'Por nada! 💚🌱\n\n' +
-      'Estou aqui sempre que você precisar.'
+      'Por nada! ðŸ’šðŸŒ±\n\n' +
+      'Estou aqui sempre que vocÃª precisar.'
     );
   }
 
@@ -167,8 +167,8 @@ function gerarResposta(
     pergunta.includes('ate logo')
   ) {
     return (
-      'Até mais! 👋🌱\n\n' +
-      'Continue acompanhando as leituras do EcoGuard e priorize sempre sua segurança.'
+      'AtÃ© mais! ðŸ‘‹ðŸŒ±\n\n' +
+      'Continue acompanhando as leituras do EcoGuard e priorize sempre sua seguranÃ§a.'
     );
   }
 
@@ -183,23 +183,23 @@ function gerarResposta(
     pergunta.includes('o que voce e')
   ) {
     return (
-      '🤖 ECOGUARD IA\n\n' +
+      'ðŸ¤– ECOGUARD IA\n\n' +
       'Sou o assistente inteligente do EcoGuard.\n\n' +
-      'Posso interpretar as leituras do sistema e explicar situações ' +
-      'relacionadas a fumaça, fogo, temperatura, prevenção e segurança.\n\n' +
-      'Neste momento, minhas respostas são baseadas nas regras e dados ' +
-      'do próprio sistema.'
+      'Posso interpretar as leituras do sistema e explicar situaÃ§Ãµes ' +
+      'relacionadas a fumaÃ§a, fogo, temperatura, prevenÃ§Ã£o e seguranÃ§a.\n\n' +
+      'Neste momento, minhas respostas sÃ£o baseadas nas regras e dados ' +
+      'do prÃ³prio sistema.'
     );
   }
 
   /*
-   * SITUAÇÃO ATUAL
+   * SITUAÃ‡ÃƒO ATUAL
    */
 
   if (
     pergunta.includes('como esta') ||
     pergunta.includes('como esta o') ||
-    pergunta.includes('como está') ||
+    pergunta.includes('como estÃ¡') ||
     pergunta.includes('situacao') ||
     pergunta.includes('situacao atual') ||
     pergunta.includes('status') ||
@@ -214,33 +214,33 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '📡 NÃO HÁ LEITURA DISPONÍVEL\n\n' +
-        'Não encontrei uma leitura recente no sistema.\n\n' +
-        'Verifique se o ESP8266 está conectado e enviando dados para o Supabase.'
+        'ðŸ“¡ NÃƒO HÃ LEITURA DISPONÃVEL\n\n' +
+        'NÃ£o encontrei uma leitura recente no sistema.\n\n' +
+        'Verifique se o ESP8266 estÃ¡ conectado e enviando dados para o Supabase.'
       );
     }
 
     return (
-      '📊 SITUAÇÃO ATUAL\n\n' +
+      'ðŸ“Š SITUAÃ‡ÃƒO ATUAL\n\n' +
       `Status: ${status}\n\n` +
-      `🌫️ Fumaça: ${fumaca}%\n` +
-      `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n\n` +
-      (status === 'CRÍTICO'
-        ? '🚨 A situação é crítica. Afaste-se da área de risco e priorize sua segurança.'
-        : status === 'ATENÇÃO'
-          ? '⚠️ Existem condições que precisam de acompanhamento.'
-          : '✅ As condições atuais estão dentro da faixa segura.')
+      `ðŸŒ«ï¸ FumaÃ§a: ${fumaca}%\n` +
+      `ðŸ”¥ Fogo: ${fogo ? 'DETECTADO' : 'NÃ£o detectado'}\n` +
+      `ðŸŒ¡ï¸ Temperatura: ${temperatura}Â°C\n\n` +
+      (status === 'CRÃTICO'
+        ? 'ðŸš¨ A situaÃ§Ã£o Ã© crÃ­tica. Afaste-se da Ã¡rea de risco e priorize sua seguranÃ§a.'
+        : status === 'ATENÃ‡ÃƒO'
+          ? 'âš ï¸ Existem condiÃ§Ãµes que precisam de acompanhamento.'
+          : 'âœ… As condiÃ§Ãµes atuais estÃ£o dentro da faixa segura.')
     );
   }
 
   /*
-   * FUMAÇA
+   * FUMAÃ‡A
    */
 
   if (
     pergunta.includes('fumaca') ||
-    pergunta.includes('fumaça') ||
+    pergunta.includes('fumaÃ§a') ||
     pergunta.includes('nivel de fumaca') ||
     pergunta.includes('quantidade de fumaca') ||
     pergunta.includes('quanto de fumaca') ||
@@ -249,21 +249,21 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '🌫️ Ainda não tenho uma leitura de fumaça disponível.'
+        'ðŸŒ«ï¸ Ainda nÃ£o tenho uma leitura de fumaÃ§a disponÃ­vel.'
       );
     }
 
     return (
-      '🌫️ LEITURA DE FUMAÇA\n\n' +
-      `O sensor está indicando ${fumaca}%.\n\n` +
-      '• 0% a 39% → Seguro\n' +
-      '• 40% a 69% → Atenção\n' +
-      '• 70% ou mais → Crítico\n\n' +
+      'ðŸŒ«ï¸ LEITURA DE FUMAÃ‡A\n\n' +
+      `O sensor estÃ¡ indicando ${fumaca}%.\n\n` +
+      'â€¢ 0% a 39% â†’ Seguro\n' +
+      'â€¢ 40% a 69% â†’ AtenÃ§Ã£o\n' +
+      'â€¢ 70% ou mais â†’ CrÃ­tico\n\n' +
       (fumaca >= 70
-        ? '🚨 O nível atual é crítico. Afaste-se de fumaça ou fogo e procure um local seguro.'
+        ? 'ðŸš¨ O nÃ­vel atual Ã© crÃ­tico. Afaste-se de fumaÃ§a ou fogo e procure um local seguro.'
         : fumaca >= 40
-          ? '⚠️ O nível está elevado. Continue monitorando o ambiente.'
-          : '✅ O nível atual está dentro da faixa segura.')
+          ? 'âš ï¸ O nÃ­vel estÃ¡ elevado. Continue monitorando o ambiente.'
+          : 'âœ… O nÃ­vel atual estÃ¡ dentro da faixa segura.')
     );
   }
 
@@ -273,10 +273,10 @@ function gerarResposta(
     pergunta.includes('nivel critico de fumaca')
   ) {
     return (
-      '🚨 FUMAÇA CRÍTICA\n\n' +
-      'No EcoGuard, uma leitura de 70% ou mais é considerada crítica.\n\n' +
-      'Isso não significa automaticamente que existe um incêndio, ' +
-      'mas indica uma condição que merece atenção imediata.'
+      'ðŸš¨ FUMAÃ‡A CRÃTICA\n\n' +
+      'No EcoGuard, uma leitura de 70% ou mais Ã© considerada crÃ­tica.\n\n' +
+      'Isso nÃ£o significa automaticamente que existe um incÃªndio, ' +
+      'mas indica uma condiÃ§Ã£o que merece atenÃ§Ã£o imediata.'
     );
   }
 
@@ -286,13 +286,13 @@ function gerarResposta(
     pergunta.includes('fumaca aumentando')
   ) {
     return (
-      '⚠️ FUMAÇA ELEVADA\n\n' +
+      'âš ï¸ FUMAÃ‡A ELEVADA\n\n' +
       'No EcoGuard:\n\n' +
-      '40% ou mais → Atenção\n' +
-      '70% ou mais → Crítico\n\n' +
+      '40% ou mais â†’ AtenÃ§Ã£o\n' +
+      '70% ou mais â†’ CrÃ­tico\n\n' +
       (!leitura
-        ? 'Ainda não existe uma leitura disponível.'
-        : `A leitura atual é ${fumaca}%.`)
+        ? 'Ainda nÃ£o existe uma leitura disponÃ­vel.'
+        : `A leitura atual Ã© ${fumaca}%.`)
     );
   }
 
@@ -310,17 +310,17 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '🔥 Não consegui consultar uma leitura atual de fogo.'
+        'ðŸ”¥ NÃ£o consegui consultar uma leitura atual de fogo.'
       );
     }
 
     return fogo
-      ? '🔥 ALERTA: FOGO DETECTADO\n\nAfaste-se da área de risco. Não tente combater um incêndio se isso colocar você em perigo.\n\nEm uma emergência, ligue para 193.'
-      : '🔥 O sistema não está registrando fogo neste momento.\n\nIsso não garante que não exista nenhum foco de incêndio, portanto continue atento ao ambiente.';
+      ? 'ðŸ”¥ ALERTA: FOGO DETECTADO\n\nAfaste-se da Ã¡rea de risco. NÃ£o tente combater um incÃªndio se isso colocar vocÃª em perigo.\n\nEm uma emergÃªncia, ligue para 193.'
+      : 'ðŸ”¥ O sistema nÃ£o estÃ¡ registrando fogo neste momento.\n\nIsso nÃ£o garante que nÃ£o exista nenhum foco de incÃªndio, portanto continue atento ao ambiente.';
   }
 
   /*
-   * INCÊNDIO
+   * INCÃŠNDIO
    */
 
   if (
@@ -329,13 +329,13 @@ function gerarResposta(
     pergunta.includes('queimada')
   ) {
     return (
-      '🔥 INCÊNDIO OU QUEIMADA\n\n' +
-      'Se houver risco para pessoas ou imóveis:\n\n' +
-      '1. Afaste-se da área de perigo.\n' +
-      '2. Avise outras pessoas próximas.\n' +
-      '3. Não entre em locais com muita fumaça.\n' +
+      'ðŸ”¥ INCÃŠNDIO OU QUEIMADA\n\n' +
+      'Se houver risco para pessoas ou imÃ³veis:\n\n' +
+      '1. Afaste-se da Ã¡rea de perigo.\n' +
+      '2. Avise outras pessoas prÃ³ximas.\n' +
+      '3. NÃ£o entre em locais com muita fumaÃ§a.\n' +
       '4. Ligue para os Bombeiros pelo 193.\n' +
-      '5. Informe a localização com precisão.'
+      '5. Informe a localizaÃ§Ã£o com precisÃ£o.'
     );
   }
 
@@ -349,15 +349,15 @@ function gerarResposta(
     pergunta.includes('ligar para bombeiro')
   ) {
     return (
-      '🚒 BOMBEIROS\n\n' +
-      'No Brasil, o número dos Bombeiros é 193.\n\n' +
-      'Em uma emergência, informe o local da ocorrência, ' +
-      'o tipo de situação e se existem pessoas em risco.'
+      'ðŸš’ BOMBEIROS\n\n' +
+      'No Brasil, o nÃºmero dos Bombeiros Ã© 193.\n\n' +
+      'Em uma emergÃªncia, informe o local da ocorrÃªncia, ' +
+      'o tipo de situaÃ§Ã£o e se existem pessoas em risco.'
     );
   }
 
   /*
-   * EMERGÊNCIA
+   * EMERGÃŠNCIA
    */
 
   if (
@@ -366,12 +366,12 @@ function gerarResposta(
     pergunta.includes('risco imediato')
   ) {
     return (
-      '🚨 EMERGÊNCIA\n\n' +
-      'Se houver fogo, muita fumaça, explosão ou risco direto à vida:\n\n' +
-      '• Afaste-se para um local seguro.\n' +
-      '• Não tente investigar de perto.\n' +
-      '• Não retorne ao local para buscar objetos.\n' +
-      '• Em incêndios, ligue para 193.'
+      'ðŸš¨ EMERGÃŠNCIA\n\n' +
+      'Se houver fogo, muita fumaÃ§a, explosÃ£o ou risco direto Ã  vida:\n\n' +
+      'â€¢ Afaste-se para um local seguro.\n' +
+      'â€¢ NÃ£o tente investigar de perto.\n' +
+      'â€¢ NÃ£o retorne ao local para buscar objetos.\n' +
+      'â€¢ Em incÃªndios, ligue para 193.'
     );
   }
 
@@ -386,18 +386,18 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '🌡️ Ainda não existe uma leitura atual de temperatura.'
+        'ðŸŒ¡ï¸ Ainda nÃ£o existe uma leitura atual de temperatura.'
       );
     }
 
     return (
-      '🌡️ TEMPERATURA\n\n' +
-      `A temperatura atual é ${temperatura}°C.\n\n` +
+      'ðŸŒ¡ï¸ TEMPERATURA\n\n' +
+      `A temperatura atual Ã© ${temperatura}Â°C.\n\n` +
       (temperatura >= 60
-        ? '🚨 A temperatura está em nível crítico.'
+        ? 'ðŸš¨ A temperatura estÃ¡ em nÃ­vel crÃ­tico.'
         : temperatura >= 40
-          ? '⚠️ A temperatura está elevada.'
-          : '✅ A temperatura está abaixo do limite de atenção.')
+          ? 'âš ï¸ A temperatura estÃ¡ elevada.'
+          : 'âœ… A temperatura estÃ¡ abaixo do limite de atenÃ§Ã£o.')
     );
   }
 
@@ -411,32 +411,32 @@ function gerarResposta(
     pergunta.includes('nivel de risco') ||
     pergunta.includes('corre risco') ||
     pergunta.includes('e perigoso') ||
-    pergunta.includes('é perigoso') ||
+    pergunta.includes('Ã© perigoso') ||
     pergunta.includes('devo me preocupar') ||
     pergunta.includes('preciso me preocupar')
   ) {
     if (!leitura) {
       return (
-        '⚠️ Ainda não tenho dados suficientes para avaliar o risco atual.'
+        'âš ï¸ Ainda nÃ£o tenho dados suficientes para avaliar o risco atual.'
       );
     }
 
     return (
-      '⚠️ AVALIAÇÃO DE RISCO\n\n' +
+      'âš ï¸ AVALIAÃ‡ÃƒO DE RISCO\n\n' +
       `Status: ${status}\n\n` +
-      `🌫️ Fumaça: ${fumaca}%\n` +
-      `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n\n` +
-      (status === 'CRÍTICO'
-        ? '🚨 Existe pelo menos uma condição crítica.'
-        : status === 'ATENÇÃO'
-          ? '⚠️ Existe pelo menos uma condição de atenção.'
-          : '✅ Nenhuma condição crítica ou de atenção foi identificada.')
+      `ðŸŒ«ï¸ FumaÃ§a: ${fumaca}%\n` +
+      `ðŸ”¥ Fogo: ${fogo ? 'DETECTADO' : 'NÃ£o detectado'}\n` +
+      `ðŸŒ¡ï¸ Temperatura: ${temperatura}Â°C\n\n` +
+      (status === 'CRÃTICO'
+        ? 'ðŸš¨ Existe pelo menos uma condiÃ§Ã£o crÃ­tica.'
+        : status === 'ATENÃ‡ÃƒO'
+          ? 'âš ï¸ Existe pelo menos uma condiÃ§Ã£o de atenÃ§Ã£o.'
+          : 'âœ… Nenhuma condiÃ§Ã£o crÃ­tica ou de atenÃ§Ã£o foi identificada.')
     );
   }
 
   /*
-   * POR QUE ESTÁ CRÍTICO
+   * POR QUE ESTÃ CRÃTICO
    */
 
   if (
@@ -446,8 +446,8 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '🚨 O estado crítico pode ocorrer quando existe fogo detectado, ' +
-        'fumaça de 70% ou mais ou temperatura de 60°C ou mais.'
+        'ðŸš¨ O estado crÃ­tico pode ocorrer quando existe fogo detectado, ' +
+        'fumaÃ§a de 70% ou mais ou temperatura de 60Â°C ou mais.'
       );
     }
 
@@ -458,19 +458,19 @@ function gerarResposta(
     }
 
     if (fumaca !== null && fumaca >= 70) {
-      motivos.push(`fumaça em ${fumaca}%`);
+      motivos.push(`fumaÃ§a em ${fumaca}%`);
     }
 
     if (temperatura !== null && temperatura >= 60) {
-      motivos.push(`temperatura em ${temperatura}°C`);
+      motivos.push(`temperatura em ${temperatura}Â°C`);
     }
 
     return (
-      `🚨 STATUS: ${status}\n\n` +
+      `ðŸš¨ STATUS: ${status}\n\n` +
       (motivos.length > 0
         ? `Motivo(s): ${motivos.join(', ')}.\n\n`
-        : 'A leitura indica uma condição de risco.\n\n') +
-      'Priorize sua segurança.'
+        : 'A leitura indica uma condiÃ§Ã£o de risco.\n\n') +
+      'Priorize sua seguranÃ§a.'
     );
   }
 
@@ -484,17 +484,17 @@ function gerarResposta(
     pergunta.includes('como devo agir')
   ) {
     return (
-      '🛡️ COMO AGIR EM UMA SITUAÇÃO DE RISCO\n\n' +
-      '• Não se aproxime do fogo ou da fumaça.\n' +
-      '• Afaste crianças e outras pessoas.\n' +
-      '• Não entre em locais com muita fumaça.\n' +
-      '• Procure um local seguro.\n' +
-      '• Em uma emergência, ligue para 193.'
+      'ðŸ›¡ï¸ COMO AGIR EM UMA SITUAÃ‡ÃƒO DE RISCO\n\n' +
+      'â€¢ NÃ£o se aproxime do fogo ou da fumaÃ§a.\n' +
+      'â€¢ Afaste crianÃ§as e outras pessoas.\n' +
+      'â€¢ NÃ£o entre em locais com muita fumaÃ§a.\n' +
+      'â€¢ Procure um local seguro.\n' +
+      'â€¢ Em uma emergÃªncia, ligue para 193.'
     );
   }
 
   /*
-   * PREVENÇÃO
+   * PREVENÃ‡ÃƒO
    */
 
   if (
@@ -503,13 +503,13 @@ function gerarResposta(
     pergunta.includes('prevenir queimada')
   ) {
     return (
-      '🌳 PREVENÇÃO DE INCÊNDIOS\n\n' +
-      '• Evite queimadas.\n' +
-      '• Não descarte cigarros em áreas secas.\n' +
-      '• Mantenha materiais inflamáveis longe de fontes de calor.\n' +
-      '• Monitore áreas de risco.\n' +
-      '• Tenha rotas de saída definidas.\n' +
-      '• Redobre os cuidados em períodos secos e quentes.'
+      'ðŸŒ³ PREVENÃ‡ÃƒO DE INCÃŠNDIOS\n\n' +
+      'â€¢ Evite queimadas.\n' +
+      'â€¢ NÃ£o descarte cigarros em Ã¡reas secas.\n' +
+      'â€¢ Mantenha materiais inflamÃ¡veis longe de fontes de calor.\n' +
+      'â€¢ Monitore Ã¡reas de risco.\n' +
+      'â€¢ Tenha rotas de saÃ­da definidas.\n' +
+      'â€¢ Redobre os cuidados em perÃ­odos secos e quentes.'
     );
   }
 
@@ -522,13 +522,13 @@ function gerarResposta(
     pergunta.includes('sensores')
   ) {
     return (
-      '📡 SENSORES\n\n' +
-      'O EcoGuard utiliza sensores para coletar informações do ambiente.\n\n' +
-      'No sistema atual, as principais informações monitoradas são:\n\n' +
-      '🌫️ Nível de fumaça\n' +
-      '🔥 Detecção de fogo\n' +
-      '🌡️ Temperatura\n\n' +
-      'Esses dados são enviados para o sistema e apresentados no aplicativo.'
+      'ðŸ“¡ SENSORES\n\n' +
+      'O EcoGuard utiliza sensores para coletar informaÃ§Ãµes do ambiente.\n\n' +
+      'No sistema atual, as principais informaÃ§Ãµes monitoradas sÃ£o:\n\n' +
+      'ðŸŒ«ï¸ NÃ­vel de fumaÃ§a\n' +
+      'ðŸ”¥ DetecÃ§Ã£o de fogo\n' +
+      'ðŸŒ¡ï¸ Temperatura\n\n' +
+      'Esses dados sÃ£o enviados para o sistema e apresentados no aplicativo.'
     );
   }
 
@@ -542,10 +542,10 @@ function gerarResposta(
     pergunta.includes('placa')
   ) {
     return (
-      '🔌 ESP8266\n\n' +
+      'ðŸ”Œ ESP8266\n\n' +
       'O ESP8266 funciona como o controlador do sistema de sensores.\n\n' +
       'Ele recebe os dados dos sensores, conecta-se ao Wi-Fi e envia as leituras para o Supabase.\n\n' +
-      'Depois disso, o EcoGuard consegue apresentar essas informações no aplicativo.'
+      'Depois disso, o EcoGuard consegue apresentar essas informaÃ§Ãµes no aplicativo.'
     );
   }
 
@@ -558,14 +558,14 @@ function gerarResposta(
     pergunta.includes('banco de dados')
   ) {
     return (
-      '☁️ SUPABASE\n\n' +
+      'â˜ï¸ SUPABASE\n\n' +
       'O Supabase funciona como a camada de armazenamento de dados do EcoGuard.\n\n' +
-      'A tabela "leituras" armazena informações como:\n\n' +
-      '🌫️ Fumaça\n' +
-      '🔥 Fogo\n' +
-      '🌡️ Temperatura\n' +
-      '📊 Status\n' +
-      '🕒 Data e horário'
+      'A tabela "leituras" armazena informaÃ§Ãµes como:\n\n' +
+      'ðŸŒ«ï¸ FumaÃ§a\n' +
+      'ðŸ”¥ Fogo\n' +
+      'ðŸŒ¡ï¸ Temperatura\n' +
+      'ðŸ“Š Status\n' +
+      'ðŸ•’ Data e horÃ¡rio'
     );
   }
 
@@ -579,14 +579,14 @@ function gerarResposta(
     pergunta.includes('atualiza')
   ) {
     return (
-      '⚡ TEMPO REAL\n\n' +
+      'âš¡ TEMPO REAL\n\n' +
       'O EcoGuard utiliza o Supabase Realtime para acompanhar novas leituras.\n\n' +
-      'Quando o ESP8266 envia um novo registro, o aplicativo pode receber essa atualização automaticamente.'
+      'Quando o ESP8266 envia um novo registro, o aplicativo pode receber essa atualizaÃ§Ã£o automaticamente.'
     );
   }
 
   /*
-   * HISTÓRICO
+   * HISTÃ“RICO
    */
 
   if (
@@ -594,9 +594,9 @@ function gerarResposta(
     pergunta.includes('leituras anteriores')
   ) {
     return (
-      '📋 HISTÓRICO\n\n' +
-      'A tela Histórico permite acompanhar os registros enviados pelo sistema.\n\n' +
-      'Assim você consegue observar como as condições ambientais mudaram ao longo do tempo.'
+      'ðŸ“‹ HISTÃ“RICO\n\n' +
+      'A tela HistÃ³rico permite acompanhar os registros enviados pelo sistema.\n\n' +
+      'Assim vocÃª consegue observar como as condiÃ§Ãµes ambientais mudaram ao longo do tempo.'
     );
   }
 
@@ -609,14 +609,14 @@ function gerarResposta(
     pergunta.includes('mandar alerta')
   ) {
     return (
-      '📲 WHATSAPP\n\n' +
+      'ðŸ“² WHATSAPP\n\n' +
       'O EcoGuard pode preparar uma mensagem de alerta para ser enviada pelo WhatsApp.\n\n' +
-      'Para isso, o telefone de emergência precisa estar cadastrado corretamente nas configurações.'
+      'Para isso, o telefone de emergÃªncia precisa estar cadastrado corretamente nas configuraÃ§Ãµes.'
     );
   }
 
   /*
-   * NOTIFICAÇÕES
+   * NOTIFICAÃ‡Ã•ES
    */
 
   if (
@@ -624,9 +624,9 @@ function gerarResposta(
     pergunta.includes('alerta do app')
   ) {
     return (
-      '🔔 NOTIFICAÇÕES\n\n' +
-      'As notificações podem avisar quando uma condição de risco é identificada.\n\n' +
-      'Elas funcionam como uma camada adicional de alerta e não substituem os serviços de emergência.'
+      'ðŸ”” NOTIFICAÃ‡Ã•ES\n\n' +
+      'As notificaÃ§Ãµes podem avisar quando uma condiÃ§Ã£o de risco Ã© identificada.\n\n' +
+      'Elas funcionam como uma camada adicional de alerta e nÃ£o substituem os serviÃ§os de emergÃªncia.'
     );
   }
 
@@ -639,9 +639,9 @@ function gerarResposta(
     pergunta.includes('sirene')
   ) {
     return (
-      '🔊 ALARME\n\n' +
-      'O EcoGuard pode utilizar um alerta sonoro quando uma condição crítica é detectada.\n\n' +
-      'O alarme serve como aviso e não substitui a comunicação com os serviços de emergência.'
+      'ðŸ”Š ALARME\n\n' +
+      'O EcoGuard pode utilizar um alerta sonoro quando uma condiÃ§Ã£o crÃ­tica Ã© detectada.\n\n' +
+      'O alarme serve como aviso e nÃ£o substitui a comunicaÃ§Ã£o com os serviÃ§os de emergÃªncia.'
     );
   }
 
@@ -651,9 +651,9 @@ function gerarResposta(
 
   if (pergunta.includes('extintor')) {
     return (
-      '🧯 EXTINTOR\n\n' +
-      'Um extintor deve ser utilizado somente quando o fogo for pequeno, houver uma rota de fuga segura e você souber utilizar o equipamento.\n\n' +
-      'Se o fogo estiver crescendo ou houver muita fumaça, abandone o local e chame os Bombeiros.'
+      'ðŸ§¯ EXTINTOR\n\n' +
+      'Um extintor deve ser utilizado somente quando o fogo for pequeno, houver uma rota de fuga segura e vocÃª souber utilizar o equipamento.\n\n' +
+      'Se o fogo estiver crescendo ou houver muita fumaÃ§a, abandone o local e chame os Bombeiros.'
     );
   }
 
@@ -667,14 +667,14 @@ function gerarResposta(
     pergunta.includes('oleo')
   ) {
     return (
-      '🍳 INCÊNDIO NA COZINHA\n\n' +
-      'Nunca jogue água sobre óleo em chamas, pois isso pode espalhar o fogo violentamente.\n\n' +
-      'Se não for possível controlar a situação com segurança, saia do local e chame os Bombeiros.'
+      'ðŸ³ INCÃŠNDIO NA COZINHA\n\n' +
+      'Nunca jogue Ã¡gua sobre Ã³leo em chamas, pois isso pode espalhar o fogo violentamente.\n\n' +
+      'Se nÃ£o for possÃ­vel controlar a situaÃ§Ã£o com seguranÃ§a, saia do local e chame os Bombeiros.'
     );
   }
 
   /*
-   * GÁS
+   * GÃS
    */
 
   if (
@@ -682,10 +682,10 @@ function gerarResposta(
     pergunta.includes('vazamento')
   ) {
     return (
-      '⚠️ VAZAMENTO DE GÁS\n\n' +
-      'Evite chamas, faíscas e interruptores elétricos.\n\n' +
-      'Afaste-se do local e procure assistência adequada.\n\n' +
-      'Se houver risco de incêndio ou explosão, acione os serviços de emergência.'
+      'âš ï¸ VAZAMENTO DE GÃS\n\n' +
+      'Evite chamas, faÃ­scas e interruptores elÃ©tricos.\n\n' +
+      'Afaste-se do local e procure assistÃªncia adequada.\n\n' +
+      'Se houver risco de incÃªndio ou explosÃ£o, acione os serviÃ§os de emergÃªncia.'
     );
   }
 
@@ -698,8 +698,8 @@ function gerarResposta(
     pergunta.includes('bituca')
   ) {
     return (
-      '🚬 CIGARROS\n\n' +
-      'Bitucas podem iniciar incêndios quando descartadas em vegetação ou materiais secos.\n\n' +
+      'ðŸš¬ CIGARROS\n\n' +
+      'Bitucas podem iniciar incÃªndios quando descartadas em vegetaÃ§Ã£o ou materiais secos.\n\n' +
       'Apague completamente o cigarro e descarte-o corretamente.'
     );
   }
@@ -710,9 +710,9 @@ function gerarResposta(
 
   if (pergunta.includes('vento')) {
     return (
-      '💨 VENTO\n\n' +
-      'Ventos fortes podem acelerar a propagação de um incêndio e dificultar o controle das chamas.\n\n' +
-      'Em uma situação de fogo, mantenha distância e procure uma direção segura.'
+      'ðŸ’¨ VENTO\n\n' +
+      'Ventos fortes podem acelerar a propagaÃ§Ã£o de um incÃªndio e dificultar o controle das chamas.\n\n' +
+      'Em uma situaÃ§Ã£o de fogo, mantenha distÃ¢ncia e procure uma direÃ§Ã£o segura.'
     );
   }
 
@@ -722,9 +722,9 @@ function gerarResposta(
 
   if (pergunta.includes('chuva')) {
     return (
-      '🌧️ CHUVA\n\n' +
-      'A chuva pode reduzir a secura da vegetação e diminuir algumas condições favoráveis à propagação do fogo.\n\n' +
-      'Mesmo assim, uma área em chamas não deve ser considerada automaticamente segura.'
+      'ðŸŒ§ï¸ CHUVA\n\n' +
+      'A chuva pode reduzir a secura da vegetaÃ§Ã£o e diminuir algumas condiÃ§Ãµes favorÃ¡veis Ã  propagaÃ§Ã£o do fogo.\n\n' +
+      'Mesmo assim, uma Ã¡rea em chamas nÃ£o deve ser considerada automaticamente segura.'
     );
   }
 
@@ -737,9 +737,9 @@ function gerarResposta(
     pergunta.includes('tempo seco')
   ) {
     return (
-      '☀️ TEMPO SECO\n\n' +
-      'Períodos secos podem aumentar o risco de propagação de incêndios porque a vegetação perde umidade.\n\n' +
-      'Nessas condições, evite fontes de ignição e monitore áreas de risco.'
+      'â˜€ï¸ TEMPO SECO\n\n' +
+      'PerÃ­odos secos podem aumentar o risco de propagaÃ§Ã£o de incÃªndios porque a vegetaÃ§Ã£o perde umidade.\n\n' +
+      'Nessas condiÃ§Ãµes, evite fontes de igniÃ§Ã£o e monitore Ã¡reas de risco.'
     );
   }
 
@@ -753,14 +753,14 @@ function gerarResposta(
     pergunta.includes('pet')
   ) {
     return (
-      '🐾 ANIMAIS\n\n' +
-      'Em uma emergência, retire animais da área de risco somente se isso puder ser feito com segurança.\n\n' +
-      'Não coloque sua vida em perigo tentando resgatar um animal em meio ao fogo ou fumaça intensa.'
+      'ðŸ¾ ANIMAIS\n\n' +
+      'Em uma emergÃªncia, retire animais da Ã¡rea de risco somente se isso puder ser feito com seguranÃ§a.\n\n' +
+      'NÃ£o coloque sua vida em perigo tentando resgatar um animal em meio ao fogo ou fumaÃ§a intensa.'
     );
   }
 
   /*
-   * CRIANÇAS
+   * CRIANÃ‡AS
    */
 
   if (
@@ -768,14 +768,14 @@ function gerarResposta(
     pergunta.includes('criancas')
   ) {
     return (
-      '👨‍👩‍👧 CRIANÇAS\n\n' +
-      'Mantenha crianças e pessoas vulneráveis afastadas da área de risco.\n\n' +
-      'Não permita que retornem ao local para buscar objetos.'
+      'ðŸ‘¨â€ðŸ‘©â€ðŸ‘§ CRIANÃ‡AS\n\n' +
+      'Mantenha crianÃ§as e pessoas vulnerÃ¡veis afastadas da Ã¡rea de risco.\n\n' +
+      'NÃ£o permita que retornem ao local para buscar objetos.'
     );
   }
 
   /*
-   * SEGURANÇA
+   * SEGURANÃ‡A
    */
 
   if (
@@ -784,15 +784,15 @@ function gerarResposta(
     pergunta.includes('entrar no local')
   ) {
     return (
-      '🛡️ SEGURANÇA\n\n' +
-      'Sua segurança vem antes do equipamento.\n\n' +
-      'Se houver fogo ou muita fumaça, não entre no local apenas para verificar o sensor.\n\n' +
-      'Afaste-se e aguarde orientação profissional.'
+      'ðŸ›¡ï¸ SEGURANÃ‡A\n\n' +
+      'Sua seguranÃ§a vem antes do equipamento.\n\n' +
+      'Se houver fogo ou muita fumaÃ§a, nÃ£o entre no local apenas para verificar o sensor.\n\n' +
+      'Afaste-se e aguarde orientaÃ§Ã£o profissional.'
     );
   }
 
   /*
-   * ÚLTIMA LEITURA
+   * ÃšLTIMA LEITURA
    */
 
   if (
@@ -802,17 +802,17 @@ function gerarResposta(
   ) {
     if (!leitura) {
       return (
-        '📡 Não encontrei uma leitura recente no Supabase.'
+        'ðŸ“¡ NÃ£o encontrei uma leitura recente no Supabase.'
       );
     }
 
     return (
-      '📡 ÚLTIMA LEITURA\n\n' +
-      `🌫️ Fumaça: ${fumaca}%\n` +
-      `🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n` +
-      `🌡️ Temperatura: ${temperatura}°C\n` +
-      `📊 Status: ${status}\n\n` +
-      `🕒 ${new Date(
+      'ðŸ“¡ ÃšLTIMA LEITURA\n\n' +
+      `ðŸŒ«ï¸ FumaÃ§a: ${fumaca}%\n` +
+      `ðŸ”¥ Fogo: ${fogo ? 'DETECTADO' : 'NÃ£o detectado'}\n` +
+      `ðŸŒ¡ï¸ Temperatura: ${temperatura}Â°C\n` +
+      `ðŸ“Š Status: ${status}\n\n` +
+      `ðŸ•’ ${new Date(
         leitura.created_at
       ).toLocaleString('pt-BR')}`
     );
@@ -828,17 +828,17 @@ function gerarResposta(
     pergunta.includes('perguntas')
   ) {
     return (
-      '💡 POSSO AJUDAR COM:\n\n' +
-      '🌫️ Fumaça\n' +
-      '🔥 Fogo e incêndios\n' +
-      '🌡️ Temperatura\n' +
-      '📊 Status e risco\n' +
-      '📡 Sensores\n' +
-      '🔌 ESP8266\n' +
-      '☁️ Supabase\n' +
-      '⚡ Tempo real\n' +
-      '🚒 Bombeiros e 193\n' +
-      '🛡️ Prevenção e segurança'
+      'ðŸ’¡ POSSO AJUDAR COM:\n\n' +
+      'ðŸŒ«ï¸ FumaÃ§a\n' +
+      'ðŸ”¥ Fogo e incÃªndios\n' +
+      'ðŸŒ¡ï¸ Temperatura\n' +
+      'ðŸ“Š Status e risco\n' +
+      'ðŸ“¡ Sensores\n' +
+      'ðŸ”Œ ESP8266\n' +
+      'â˜ï¸ Supabase\n' +
+      'âš¡ Tempo real\n' +
+      'ðŸš’ Bombeiros e 193\n' +
+      'ðŸ›¡ï¸ PrevenÃ§Ã£o e seguranÃ§a'
     );
   }
 
@@ -852,14 +852,14 @@ function gerarResposta(
     pergunta === 'app'
   ) {
     return (
-      '🌱 ECOGUARD\n\n' +
-      'O EcoGuard é um sistema de monitoramento ambiental desenvolvido para acompanhar condições que podem indicar risco de incêndio.\n\n' +
+      'ðŸŒ± ECOGUARD\n\n' +
+      'O EcoGuard Ã© um sistema de monitoramento ambiental desenvolvido para acompanhar condiÃ§Ãµes que podem indicar risco de incÃªndio.\n\n' +
       'Ele combina sensores, ESP8266, armazenamento de dados e uma interface para acompanhamento das leituras.'
     );
   }
 
   /*
-   * RESPOSTA PADRÃO
+   * RESPOSTA PADRÃƒO
    */
 
   if (
@@ -871,23 +871,23 @@ function gerarResposta(
     pergunta.includes('agora')
   ) {
     if (!leitura) {
-      return '📡 Ainda não recebi uma leitura recente do ESP8266. Verifique a conexão e o envio para o Supabase.';
+      return 'ðŸ“¡ Ainda nÃ£o recebi uma leitura recente do ESP8266. Verifique a conexÃ£o e o envio para o Supabase.';
     }
-    return `📊 ANALISE ATUAL\n\nStatus: ${status}\n🌫️ Fumaça: ${fumaca}%\n🔥 Fogo: ${fogo ? 'DETECTADO' : 'Não detectado'}\n🌡️ Temperatura: ${temperatura}°C\n\n${status === 'CRÍTICO' ? '🚨 Existe uma condição crítica. Afaste-se da área de risco e, se necessário, ligue para 193.' : status === 'ATENÇÃO' ? '⚠️ Há uma condição que merece acompanhamento.' : '✅ As leituras estão dentro da faixa segura definida pelo EcoGuard.'}`;
+    return `ðŸ“Š ANALISE ATUAL\n\nStatus: ${status}\nðŸŒ«ï¸ FumaÃ§a: ${fumaca}%\nðŸ”¥ Fogo: ${fogo ? 'DETECTADO' : 'NÃ£o detectado'}\nðŸŒ¡ï¸ Temperatura: ${temperatura}Â°C\n\n${status === 'CRÃTICO' ? 'ðŸš¨ Existe uma condiÃ§Ã£o crÃ­tica. Afaste-se da Ã¡rea de risco e, se necessÃ¡rio, ligue para 193.' : status === 'ATENÃ‡ÃƒO' ? 'âš ï¸ HÃ¡ uma condiÃ§Ã£o que merece acompanhamento.' : 'âœ… As leituras estÃ£o dentro da faixa segura definida pelo EcoGuard.'}`;
   }
 
   return (
-    '🤖 Ainda não encontrei uma resposta específica para essa pergunta.\n\n' +
+    'ðŸ¤– Ainda nÃ£o encontrei uma resposta especÃ­fica para essa pergunta.\n\n' +
     'Tente perguntar sobre:\n\n' +
-    '🌫️ fumaça\n' +
-    '🔥 fogo\n' +
-    '🌡️ temperatura\n' +
-    '📊 risco\n' +
-    '📡 sensores\n' +
-    '🔌 ESP8266\n' +
-    '☁️ Supabase\n' +
-    '🚒 Bombeiros\n' +
-    '🛡️ segurança'
+    'ðŸŒ«ï¸ fumaÃ§a\n' +
+    'ðŸ”¥ fogo\n' +
+    'ðŸŒ¡ï¸ temperatura\n' +
+    'ðŸ“Š risco\n' +
+    'ðŸ“¡ sensores\n' +
+    'ðŸ”Œ ESP8266\n' +
+    'â˜ï¸ Supabase\n' +
+    'ðŸš’ Bombeiros\n' +
+    'ðŸ›¡ï¸ seguranÃ§a'
   );
 }
 
@@ -912,9 +912,9 @@ export default function EcoGuardIA() {
     }
 
     return [
-      'Como está o ambiente?',
-      `A fumaça de ${leituraAtual.fumaca}% é perigosa?`,
-      'Por que está assim?',
+      'Como estÃ¡ o ambiente?',
+      `A fumaÃ§a de ${leituraAtual.fumaca}% Ã© perigosa?`,
+      'Por que estÃ¡ assim?',
       'O que devo fazer agora?',
     ];
   }, [leituraAtual]);
@@ -1079,7 +1079,7 @@ export default function EcoGuardIA() {
         id: criarId(),
         tipo: 'ia',
         texto:
-          'Não consegui processar essa pergunta agora. Tente novamente.',
+          'NÃ£o consegui processar essa pergunta agora. Tente novamente.',
         hora: obterHora(),
       };
 
@@ -1120,7 +1120,7 @@ export default function EcoGuardIA() {
         id: criarId(),
         tipo: 'ia',
         texto:
-          'Conversa limpa. 🌱\n\n' +
+          'Conversa limpa. ðŸŒ±\n\n' +
           'Pode fazer uma nova pergunta sobre o EcoGuard.',
         hora: obterHora(),
       },
@@ -1131,9 +1131,9 @@ export default function EcoGuardIA() {
     leituraAtual?.status || 'SEGURO';
 
   const corStatus =
-    statusAtual === 'CRÍTICO'
+    statusAtual === 'CRÃTICO'
       ? '#EF4444'
-      : statusAtual === 'ATENÇÃO'
+      : statusAtual === 'ATENÃ‡ÃƒO'
         ? '#F59E0B'
         : '#22C55E';
 
@@ -1226,7 +1226,7 @@ export default function EcoGuardIA() {
                 </Text>
 
                 <Text style={styles.liveSubtitle}>
-                  Estação 01 • Supabase
+                  EstaÃ§Ã£o 01 â€¢ Supabase
                 </Text>
               </View>
             </View>
@@ -1278,7 +1278,7 @@ export default function EcoGuardIA() {
               </Text>
 
               <Text style={styles.metricLabel}>
-                FUMAÇA
+                FUMAÃ‡A
               </Text>
             </View>
 
@@ -1292,7 +1292,7 @@ export default function EcoGuardIA() {
               />
 
               <Text style={styles.metricValue}>
-                {leituraAtual.temperatura}°
+                {leituraAtual.temperatura}Â°
               </Text>
 
               <Text style={styles.metricLabel}>
@@ -1322,7 +1322,7 @@ export default function EcoGuardIA() {
               >
                 {leituraAtual.fogo
                   ? 'SIM'
-                  : 'NÃO'}
+                  : 'NÃƒO'}
               </Text>
 
               <Text style={styles.metricLabel}>
@@ -1455,7 +1455,7 @@ export default function EcoGuardIA() {
                 styles.suggestionsTitle
               }
             >
-              PERGUNTAS RÁPIDAS
+              PERGUNTAS RÃPIDAS
             </Text>
 
             <ScrollView
@@ -1550,7 +1550,7 @@ export default function EcoGuardIA() {
         <Text
           style={styles.footerText}
         >
-          EcoGuard IA • análise local • sem chave de API
+          EcoGuard IA â€¢ anÃ¡lise local â€¢ sem chave de API
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -1935,3 +1935,6 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
 });
+
+
+

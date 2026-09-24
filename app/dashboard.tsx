@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { supabase } from '../lib/supabase';
 
 type Leitura = {
@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [conectado, setConectado] = useState(false);
 
-  const [nomeUsuario, setNomeUsuario] = useState('Usuário');
+  const [nomeUsuario, setNomeUsuario] = useState('UsuÃ¡rio');
   const [telefoneEmergencia, setTelefoneEmergencia] = useState('');
 
   const [sensor1, setSensor1] = useState<Leitura | null>(null);
@@ -44,7 +44,7 @@ export default function Dashboard() {
 
   /*
    * =====================================================
-   * DIMENSÕES RESPONSIVAS
+   * DIMENSÃ•ES RESPONSIVAS
    * =====================================================
    */
 
@@ -251,7 +251,7 @@ export default function Dashboard() {
 
   /*
    * =====================================================
-   * CARREGAR USUÁRIO
+   * CARREGAR USUÃRIO
    * =====================================================
    */
 
@@ -276,7 +276,7 @@ export default function Dashboard() {
 
         if (resultado.error) {
           console.log(
-            'Erro ao carregar usuário:',
+            'Erro ao carregar usuÃ¡rio:',
             resultado.error
           );
           return;
@@ -297,7 +297,7 @@ export default function Dashboard() {
         }
       } catch (erro) {
         console.log(
-          'Erro ao carregar usuário:',
+          'Erro ao carregar usuÃ¡rio:',
           erro
         );
       }
@@ -395,16 +395,16 @@ export default function Dashboard() {
   let corStatus = '#22C55E';
 
   if (alertaGeral) {
-    statusGeral = 'CRÍTICO';
+    statusGeral = 'CRÃTICO';
     corStatus = '#EF4444';
   } else if (maiorTemperatura >= 40) {
-    statusGeral = 'ATENÇÃO';
+    statusGeral = 'ATENÃ‡ÃƒO';
     corStatus = '#F59E0B';
   }
 
   /*
    * =====================================================
-   * ÚLTIMA LEITURA
+   * ÃšLTIMA LEITURA
    * =====================================================
    */
 
@@ -448,8 +448,8 @@ export default function Dashboard() {
   function enviarAlertaWhatsApp() {
     if (!telefoneEmergencia) {
       Alert.alert(
-        'Contato não configurado',
-        'Cadastre um telefone de emergência primeiro.'
+        'Contato nÃ£o configurado',
+        'Cadastre um telefone de emergÃªncia primeiro.'
       );
       return;
     }
@@ -470,25 +470,25 @@ export default function Dashboard() {
 
     const mensagem =
       'ALERTA ECOGUARD\n\n' +
-      'Atenção! O sistema detectou uma condição de risco na residência de ' +
+      'AtenÃ§Ã£o! O sistema detectou uma condiÃ§Ã£o de risco na residÃªncia de ' +
       nomeUsuario +
       '.\n\n' +
       'Sensor 1: ' +
       fumaca1 +
-      '% de fumaça\n' +
+      '% de fumaÃ§a\n' +
       'Sensor 2: ' +
       fumaca2 +
-      '% de fumaça\n' +
+      '% de fumaÃ§a\n' +
       'Maior temperatura: ' +
       maiorTemperatura.toFixed(1) +
-      ' °C\n' +
+      ' Â°C\n' +
       'Status: ' +
       statusGeral +
       '\n' +
-      'Horário: ' +
+      'HorÃ¡rio: ' +
       horario +
       '\n\n' +
-      'Verifique a segurança imediatamente.';
+      'Verifique a seguranÃ§a imediatamente.';
 
     const url =
       'whatsapp://send?phone=55' +
@@ -499,14 +499,14 @@ export default function Dashboard() {
     Linking.openURL(url).catch(() => {
       Alert.alert(
         'Erro',
-        'Não foi possível abrir o WhatsApp.'
+        'NÃ£o foi possÃ­vel abrir o WhatsApp.'
       );
     });
   }
 
   /*
    * =====================================================
-   * EMERGÊNCIA
+   * EMERGÃŠNCIA
    * =====================================================
    */
 
@@ -514,7 +514,7 @@ export default function Dashboard() {
     Linking.openURL('tel:193').catch(() => {
       Alert.alert(
         'Erro',
-        'Não foi possível iniciar a chamada para 193.'
+        'NÃ£o foi possÃ­vel iniciar a chamada para 193.'
       );
     });
   }
@@ -563,9 +563,9 @@ export default function Dashboard() {
     if (fogo) {
       textoStatus = 'FOGO DETECTADO';
     } else if (critico) {
-      textoStatus = 'RISCO CRÍTICO';
+      textoStatus = 'RISCO CRÃTICO';
     } else if (temperatura >= 40) {
-      textoStatus = 'ATENÇÃO';
+      textoStatus = 'ATENÃ‡ÃƒO';
     }
 
     return (
@@ -617,7 +617,7 @@ export default function Dashboard() {
         </Text>
 
         <Text style={styles.sensorUnit}>
-          nível de fumaça
+          nÃ­vel de fumaÃ§a
         </Text>
 
         <View style={styles.sensorData}>
@@ -634,7 +634,7 @@ export default function Dashboard() {
               </Text>
 
               <Text style={styles.sensorDataValue}>
-                {temperatura.toFixed(1)} °C
+                {temperatura.toFixed(1)} Â°C
               </Text>
             </View>
           </View>
@@ -823,7 +823,7 @@ export default function Dashboard() {
                 }
               >
                 Sistema Inteligente de
-                Prevenção de Queimadas
+                PrevenÃ§Ã£o de Queimadas
               </Text>
             </View>
 
@@ -862,7 +862,7 @@ export default function Dashboard() {
           </View>
 
           <Text style={styles.greeting}>
-            Olá, {nomeUsuario}
+            OlÃ¡, {nomeUsuario}
           </Text>
 
           <Text
@@ -904,9 +904,9 @@ export default function Dashboard() {
               >
                 <MaterialIcons
                   name={
-                    statusGeral === 'CRÍTICO'
+                    statusGeral === 'CRÃTICO'
                       ? 'warning'
-                      : statusGeral === 'ATENÇÃO'
+                      : statusGeral === 'ATENÃ‡ÃƒO'
                         ? 'priority-high'
                         : 'verified'
                   }
@@ -965,7 +965,7 @@ export default function Dashboard() {
                   styles.smokeLabel
                 }
               >
-                maior nível de fumaça
+                maior nÃ­vel de fumaÃ§a
               </Text>
             </View>
 
@@ -1066,7 +1066,7 @@ export default function Dashboard() {
                   styles.summaryTitle
                 }
               >
-                Temperatura máxima
+                Temperatura mÃ¡xima
               </Text>
 
               <Text
@@ -1077,7 +1077,7 @@ export default function Dashboard() {
                 {maiorTemperatura.toFixed(
                   1
                 )}{' '}
-                °C
+                Â°C
               </Text>
             </View>
 
@@ -1105,7 +1105,7 @@ export default function Dashboard() {
                   styles.summaryTitle
                 }
               >
-                Fumaça máxima
+                FumaÃ§a mÃ¡xima
               </Text>
 
               <Text
@@ -1177,7 +1177,7 @@ export default function Dashboard() {
                     styles.alertTitle
                   }
                 >
-                  ALERTA DE SEGURANÇA
+                  ALERTA DE SEGURANÃ‡A
                 </Text>
 
                 <Text
@@ -1186,10 +1186,10 @@ export default function Dashboard() {
                   }
                 >
                   {risco1 && risco2
-                    ? 'Os dois sensores identificaram uma condição crítica.'
+                    ? 'Os dois sensores identificaram uma condiÃ§Ã£o crÃ­tica.'
                     : risco1
-                      ? 'O Sensor 1 identificou uma condição crítica.'
-                      : 'O Sensor 2 identificou uma condição crítica.'}
+                      ? 'O Sensor 1 identificou uma condiÃ§Ã£o crÃ­tica.'
+                      : 'O Sensor 2 identificou uma condiÃ§Ã£o crÃ­tica.'}
                 </Text>
               </View>
             </View>
@@ -1234,7 +1234,7 @@ export default function Dashboard() {
                   styles.whatsappSubtitle
                 }
               >
-                Compartilhar situação dos
+                Compartilhar situaÃ§Ã£o dos
                 sensores
               </Text>
             </View>
@@ -1276,7 +1276,7 @@ export default function Dashboard() {
                   style={styles.aiText}
                 >
                   Analise os dados dos dois
-                  sensores e receba orientações
+                  sensores e receba orientaÃ§Ãµes
                   inteligentes sobre o ambiente.
                 </Text>
               </View>
@@ -1317,7 +1317,7 @@ export default function Dashboard() {
                     styles.signalTitle
                   }
                 >
-                  ÚLTIMO SINAL RECEBIDO
+                  ÃšLTIMO SINAL RECEBIDO
                 </Text>
 
                 <Text
@@ -1327,7 +1327,7 @@ export default function Dashboard() {
                 >
                   Sensor{' '}
                   {leituraAtual.sensor_id}
-                  {' • '}
+                  {' â€¢ '}
                   {formatarHora(
                     leituraAtual.created_at
                   )}
@@ -1340,10 +1340,10 @@ export default function Dashboard() {
                   {
                     color:
                       leituraAtual.status ===
-                      'CRÍTICO'
+                      'CRÃTICO'
                         ? '#EF4444'
                         : leituraAtual.status ===
-                            'ATENÇÃO'
+                            'ATENÃ‡ÃƒO'
                           ? '#F59E0B'
                           : '#22C55E',
                   },
@@ -1364,7 +1364,7 @@ export default function Dashboard() {
                 styles.sectionTitleNoMargin
               }
             >
-              HISTÓRICO RECENTE
+              HISTÃ“RICO RECENTE
             </Text>
 
             <Text
@@ -1409,12 +1409,12 @@ export default function Dashboard() {
 
                 if (
                   dados.status ===
-                  'CRÍTICO'
+                  'CRÃTICO'
                 ) {
                   cor = '#EF4444';
                 } else if (
                   dados.status ===
-                  'ATENÇÃO'
+                  'ATENÃ‡ÃƒO'
                 ) {
                   cor = '#F59E0B';
                 }
@@ -1444,7 +1444,7 @@ export default function Dashboard() {
                           {formatarData(
                             dados.created_at
                           )}{' '}
-                          •{' '}
+                          â€¢{' '}
                           {formatarHora(
                             dados.created_at
                           )}
@@ -1492,7 +1492,7 @@ export default function Dashboard() {
                           styles.historyItem
                         }
                       >
-                        Fumaça:{' '}
+                        FumaÃ§a:{' '}
                         {Number(
                           dados.valor_fumaca
                         ).toFixed(0)}
@@ -1508,7 +1508,7 @@ export default function Dashboard() {
                         {Number(
                           dados.temperatura
                         ).toFixed(1)}
-                        °C
+                        Â°C
                       </Text>
 
                       <Text
@@ -1563,7 +1563,7 @@ export default function Dashboard() {
                   styles.emergencyTitle
                 }
               >
-                EMERGÊNCIA
+                EMERGÃŠNCIA
               </Text>
 
               <Text
@@ -1788,7 +1788,7 @@ const styles = StyleSheet.create({
   },
 
   /*
-   * TÍTULOS
+   * TÃTULOS
    */
 
   sectionTitle: {
@@ -2080,7 +2080,7 @@ const styles = StyleSheet.create({
   },
 
   /*
-   * ÚLTIMO SINAL
+   * ÃšLTIMO SINAL
    */
 
   lastSignal: {
@@ -2126,7 +2126,7 @@ const styles = StyleSheet.create({
   },
 
   /*
-   * HISTÓRICO
+   * HISTÃ“RICO
    */
 
   historyHeader: {
@@ -2215,7 +2215,7 @@ const styles = StyleSheet.create({
   },
 
   /*
-   * EMERGÊNCIA
+   * EMERGÃŠNCIA
    */
 
   emergencyButton: {
@@ -2254,3 +2254,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
+
+
+

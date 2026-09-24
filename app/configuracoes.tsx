@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 
 import {
   View,
@@ -16,7 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -92,13 +92,13 @@ export default function Configuracoes() {
 
     } catch (error) {
       console.log(
-        'Erro ao carregar configurações:',
+        'Erro ao carregar configuraÃ§Ãµes:',
         error
       );
 
       Alert.alert(
         'Erro',
-        'Não foi possível carregar suas configurações.'
+        'NÃ£o foi possÃ­vel carregar suas configuraÃ§Ãµes.'
       );
 
     } finally {
@@ -117,7 +117,7 @@ export default function Configuracoes() {
 
     if (!nomeLimpo) {
       Alert.alert(
-        'Nome necessário',
+        'Nome necessÃ¡rio',
         'Digite seu nome para continuar.'
       );
       return;
@@ -125,8 +125,8 @@ export default function Configuracoes() {
 
     if (!telefoneLimpo) {
       Alert.alert(
-        'Telefone necessário',
-        'Digite um telefone para receber alertas e usar em emergências.'
+        'Telefone necessÃ¡rio',
+        'Digite um telefone para receber alertas e usar em emergÃªncias.'
       );
       return;
     }
@@ -205,20 +205,20 @@ export default function Configuracoes() {
 
 
       Alert.alert(
-        'Tudo certo! 🌿',
-        'Suas configurações foram salvas.'
+        'Tudo certo! ðŸŒ¿',
+        'Suas configuraÃ§Ãµes foram salvas.'
       );
 
     } catch (error) {
       console.log(
-        'Erro ao salvar configurações:',
+        'Erro ao salvar configuraÃ§Ãµes:',
         error
       );
 
       // Mesmo que o banco falhe,
-      // os dados já foram salvos no celular.
+      // os dados jÃ¡ foram salvos no celular.
       Alert.alert(
-        'Configurações salvas',
+        'ConfiguraÃ§Ãµes salvas',
         'Seus dados foram salvos neste dispositivo.'
       );
 
@@ -229,7 +229,7 @@ export default function Configuracoes() {
 
 
   // ====================================================
-  // ALTERAR NOTIFICAÇÕES
+  // ALTERAR NOTIFICAÃ‡Ã•ES
   // ====================================================
 
   async function alterarNotificacoes(
@@ -245,7 +245,7 @@ export default function Configuracoes() {
 
     } catch (error) {
       console.log(
-        'Erro ao salvar preferência:',
+        'Erro ao salvar preferÃªncia:',
         error
       );
     }
@@ -274,12 +274,12 @@ export default function Configuracoes() {
 
 
   // ====================================================
-  // EMERGÊNCIA
+  // EMERGÃŠNCIA
   // ====================================================
 
   function ligar193() {
     Alert.alert(
-      'Emergência',
+      'EmergÃªncia',
       'Deseja ligar para os Bombeiros?',
       [
         {
@@ -319,7 +319,7 @@ export default function Configuracoes() {
         </Text>
 
         <Text style={styles.loadingText}>
-          Carregando configurações...
+          Carregando configuraÃ§Ãµes...
         </Text>
 
         <ActivityIndicator
@@ -367,7 +367,7 @@ export default function Configuracoes() {
         >
 
           {/* ==========================================
-              CABEÇALHO
+              CABEÃ‡ALHO
           ========================================== */}
 
           <LinearGradient
@@ -396,7 +396,7 @@ export default function Configuracoes() {
             </View>
 
             <Text style={styles.headerTitle}>
-              Configurações
+              ConfiguraÃ§Ãµes
             </Text>
 
             <Text style={styles.headerSubtitle}>
@@ -426,7 +426,7 @@ export default function Configuracoes() {
               </Text>
 
               <Text style={styles.sectionSubtitle}>
-                Informações para os alertas
+                InformaÃ§Ãµes para os alertas
               </Text>
             </View>
 
@@ -563,7 +563,7 @@ export default function Configuracoes() {
               <View style={styles.alertText}>
 
                 <Text style={styles.alertTitle}>
-                  Notificações do aplicativo
+                  NotificaÃ§Ãµes do aplicativo
                 </Text>
 
                 <Text style={styles.alertDescription}>
@@ -594,7 +594,7 @@ export default function Configuracoes() {
 
 
           {/* ==========================================
-              BOTÃO SALVAR
+              BOTÃƒO SALVAR
           ========================================== */}
 
           <TouchableOpacity
@@ -634,7 +634,7 @@ export default function Configuracoes() {
                   />
 
                   <Text style={styles.saveText}>
-                    SALVAR ALTERAÇÕES
+                    SALVAR ALTERAÃ‡Ã•ES
                   </Text>
                 </>
               )}
@@ -645,7 +645,7 @@ export default function Configuracoes() {
 
 
           {/* ==========================================
-              EMERGÊNCIA
+              EMERGÃŠNCIA
           ========================================== */}
 
           <View style={styles.sectionHeader}>
@@ -665,11 +665,11 @@ export default function Configuracoes() {
 
             <View>
               <Text style={styles.sectionTitle}>
-                Emergência
+                EmergÃªncia
               </Text>
 
               <Text style={styles.sectionSubtitle}>
-                Ação rápida em caso de incêndio
+                AÃ§Ã£o rÃ¡pida em caso de incÃªndio
               </Text>
             </View>
 
@@ -697,7 +697,7 @@ export default function Configuracoes() {
               </Text>
 
               <Text style={styles.emergencyDescription}>
-                Ligue imediatamente em caso de incêndio
+                Ligue imediatamente em caso de incÃªndio
               </Text>
 
             </View>
@@ -740,8 +740,8 @@ export default function Configuracoes() {
               </Text>
 
               <Text style={styles.aboutText}>
-                Monitoramento inteligente para prevenção
-                de queimadas e proteção ambiental.
+                Monitoramento inteligente para prevenÃ§Ã£o
+                de queimadas e proteÃ§Ã£o ambiental.
               </Text>
 
             </View>
@@ -750,11 +750,11 @@ export default function Configuracoes() {
 
 
           {/* ==========================================
-              RODAPÉ
+              RODAPÃ‰
           ========================================== */}
 
           <Text style={styles.footer}>
-            EcoGuard • Monitoramento inteligente
+            EcoGuard â€¢ Monitoramento inteligente
           </Text>
 
         </View>
@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
 
 
   // ====================================================
-  // SEÇÕES
+  // SEÃ‡Ã•ES
   // ====================================================
 
   sectionHeader: {
@@ -1056,7 +1056,7 @@ const styles = StyleSheet.create({
 
 
   // ====================================================
-  // EMERGÊNCIA
+  // EMERGÃŠNCIA
   // ====================================================
 
   emergencyCard: {
@@ -1168,3 +1168,6 @@ const styles = StyleSheet.create({
   },
 
 });
+
+
+
