@@ -14,7 +14,7 @@ import {
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { supabase } from '../src/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -32,8 +32,8 @@ interface Leitura {
 
 type Filtro =
   | 'TODOS'
-  | 'CRÃTICO'
-  | 'ATENÃ‡ÃƒO'
+  | 'CRÍTICO'
+  | 'ATENÇÃO'
   | 'SEGURO';
 
 export default function Historico() {
@@ -66,7 +66,7 @@ export default function Historico() {
         },
         (payload) => {
           console.log(
-            'ðŸ“¡ Nova leitura da estaÃ§Ã£o EcoGuard:',
+            '📡 Nova leitura da estação EcoGuard:',
             payload.new
           );
 
@@ -75,7 +75,7 @@ export default function Historico() {
       )
       .subscribe((status) => {
         console.log(
-          'ðŸ“¡ Status Realtime HistÃ³rico:',
+          '📡 Status Realtime Histórico:',
           status
         );
       });
@@ -108,7 +108,7 @@ export default function Historico() {
       setNomeSalvo(nome || '');
     } catch (error) {
       console.log(
-        'Erro ao carregar usuÃ¡rio:',
+        'Erro ao carregar usuário:',
         error
       );
     }
@@ -167,7 +167,7 @@ export default function Historico() {
               item.fogo === '1';
 
             /*
-             * O status Ã© calculado novamente aqui
+             * O status é calculado novamente aqui
              * para manter a mesma regra do EcoGuard.
              */
             const status =
@@ -191,13 +191,13 @@ export default function Historico() {
       }
     } catch (error) {
       console.log(
-        'Erro ao carregar histÃ³rico:',
+        'Erro ao carregar histórico:',
         error
       );
 
       Alert.alert(
         'Erro',
-        'NÃ£o foi possÃ­vel carregar o histÃ³rico.'
+        'Não foi possível carregar o histórico.'
       );
     } finally {
       setLoading(false);
@@ -215,14 +215,14 @@ export default function Historico() {
       fumaca >= 70 ||
       temperatura >= 60
     ) {
-      return 'CRÃTICO';
+      return 'CRÍTICO';
     }
 
     if (
       fumaca >= 40 ||
       temperatura >= 40
     ) {
-      return 'ATENÃ‡ÃƒO';
+      return 'ATENÇÃO';
     }
 
     return 'SEGURO';
@@ -230,14 +230,14 @@ export default function Historico() {
 
   function obterCorStatus(status: string) {
     if (
-      status === 'CRÃTICO' ||
+      status === 'CRÍTICO' ||
       status === 'CRITICO'
     ) {
       return '#EF4444';
     }
 
     if (
-      status === 'ATENÃ‡ÃƒO' ||
+      status === 'ATENÇÃO' ||
       status === 'ATENCAO'
     ) {
       return '#F59E0B';
@@ -250,14 +250,14 @@ export default function Historico() {
     status: string
   ) {
     if (
-      status === 'CRÃTICO' ||
+      status === 'CRÍTICO' ||
       status === 'CRITICO'
     ) {
       return 'warning';
     }
 
     if (
-      status === 'ATENÃ‡ÃƒO' ||
+      status === 'ATENÇÃO' ||
       status === 'ATENCAO'
     ) {
       return 'report-problem';
@@ -276,13 +276,13 @@ export default function Historico() {
   const quantidadeCritica =
     leituras.filter(
       (item) =>
-        item.status === 'CRÃTICO'
+        item.status === 'CRÍTICO'
     ).length;
 
   const quantidadeAtencao =
     leituras.filter(
       (item) =>
-        item.status === 'ATENÃ‡ÃƒO'
+        item.status === 'ATENÇÃO'
     ).length;
 
   const quantidadeSegura =
@@ -306,8 +306,8 @@ export default function Historico() {
   function exportarLaudoWhatsApp() {
     if (!telefoneSalvo) {
       Alert.alert(
-        'Contato nÃ£o configurado',
-        'Cadastre um telefone de emergÃªncia nas configuraÃ§Ãµes.'
+        'Contato não configurado',
+        'Cadastre um telefone de emergência nas configurações.'
       );
 
       return;
@@ -316,45 +316,45 @@ export default function Historico() {
     if (leituras.length === 0) {
       Alert.alert(
         'Sem dados',
-        'NÃ£o existem leituras para gerar o laudo.'
+        'Não existem leituras para gerar o laudo.'
       );
 
       return;
     }
 
     let relatorio =
-      `ðŸ“‹ *LAUDO TÃ‰CNICO ECOGUARD*\n\n` +
-      `ðŸ‘¤ *ResponsÃ¡vel:* ${
-        nomeSalvo || 'UsuÃ¡rio'
+      `📋 *LAUDO TÉCNICO ECOGUARD*\n\n` +
+      `👤 *Responsável:* ${
+        nomeSalvo || 'Usuário'
       }\n\n` +
-      `ðŸ“¡ *Sistema:* Monitoramento Ambiental IoT\n` +
-      `ðŸ  *EstaÃ§Ã£o:* EstaÃ§Ã£o EcoGuard\n` +
-      `ðŸ“Š *Total de registros:* ${leituras.length}\n` +
-      `ðŸŒ«ï¸ *MÃ©dia de fumaÃ§a:* ${mediaFumaca}%\n\n` +
-      `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n\n`;
+      `📡 *Sistema:* Monitoramento Ambiental IoT\n` +
+      `🏠 *Estação:* Estação EcoGuard\n` +
+      `📊 *Total de registros:* ${leituras.length}\n` +
+      `🌫️ *Média de fumaça:* ${mediaFumaca}%\n\n` +
+      `──────────────────\n\n`;
 
     leituras
       .slice(0, 10)
       .forEach((item) => {
         relatorio +=
-          `ðŸ•’ ${new Date(
+          `🕒 ${new Date(
             item.created_at
           ).toLocaleString(
             'pt-BR'
           )}\n\n` +
-          `ðŸŒ«ï¸ FumaÃ§a: ${item.valor_fumaca}%\n` +
-          `ðŸ”¥ Fogo: ${
+          `🌫️ Fumaça: ${item.valor_fumaca}%\n` +
+          `🔥 Fogo: ${
             item.fogo
-              ? 'DETECTADO ðŸš¨'
+              ? 'DETECTADO 🚨'
               : 'Normal'
           }\n` +
-          `ðŸŒ¡ï¸ Temperatura: ${item.temperatura}Â°C\n` +
-          `ðŸ“Š Status: ${item.status}\n\n` +
-          `â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n\n`;
+          `🌡️ Temperatura: ${item.temperatura}°C\n` +
+          `📊 Status: ${item.status}\n\n` +
+          `──────────────────\n\n`;
       });
 
     relatorio +=
-      `RelatÃ³rio gerado automaticamente pelo EcoGuard.`;
+      `Relatório gerado automaticamente pelo EcoGuard.`;
 
     const numero =
       telefoneSalvo.replace(/\D/g, '');
@@ -366,7 +366,7 @@ export default function Historico() {
     ).catch(() => {
       Alert.alert(
         'Erro',
-        'NÃ£o foi possÃ­vel abrir o WhatsApp.'
+        'Não foi possível abrir o WhatsApp.'
       );
     });
   }
@@ -383,7 +383,7 @@ export default function Historico() {
         </View>
 
         <Text style={styles.loadingTitle}>
-          HistÃ³rico
+          Histórico
         </Text>
 
         <Text style={styles.loadingText}>
@@ -445,7 +445,7 @@ export default function Historico() {
         </View>
 
         <Text style={styles.title}>
-          HistÃ³rico
+          Histórico
         </Text>
 
         <Text style={styles.subtitle}>
@@ -466,7 +466,7 @@ export default function Historico() {
             <Text
               style={styles.summarySubtitle}
             >
-              Ãšltimos registros recebidos
+              Últimos registros recebidos
             </Text>
           </View>
 
@@ -509,7 +509,7 @@ export default function Historico() {
             </Text>
 
             <Text style={styles.summaryLabel}>
-              CrÃ­ticos
+              Críticos
             </Text>
           </View>
 
@@ -531,7 +531,7 @@ export default function Historico() {
             </Text>
 
             <Text style={styles.summaryLabel}>
-              AtenÃ§Ã£o
+              Atenção
             </Text>
           </View>
 
@@ -559,7 +559,7 @@ export default function Historico() {
         </View>
       </View>
 
-      {/* MÃ‰DIA DE FUMAÃ‡A */}
+      {/* MÉDIA DE FUMAÇA */}
 
       <View style={styles.averageCard}>
         <View style={styles.averageIcon}>
@@ -572,7 +572,7 @@ export default function Historico() {
 
         <View style={{ flex: 1 }}>
           <Text style={styles.averageLabel}>
-            MÃ‰DIA DE FUMAÃ‡A
+            MÉDIA DE FUMAÇA
           </Text>
 
           <Text style={styles.averageText}>
@@ -583,15 +583,15 @@ export default function Historico() {
         <View style={styles.averageRight}>
           <Text style={styles.averageSmall}>
             {mediaFumaca >= 70
-              ? 'NÃ­vel crÃ­tico'
+              ? 'Nível crítico'
               : mediaFumaca >= 40
-              ? 'Requer atenÃ§Ã£o'
+              ? 'Requer atenção'
               : 'Dentro do normal'}
           </Text>
         </View>
       </View>
 
-      {/* ESTAÃ‡ÃƒO */}
+      {/* ESTAÇÃO */}
 
       <View style={styles.stationCard}>
         <View style={styles.stationIcon}>
@@ -604,11 +604,11 @@ export default function Historico() {
 
         <View style={{ flex: 1 }}>
           <Text style={styles.stationTitle}>
-            ESTAÃ‡ÃƒO ECOGUARD
+            ESTAÇÃO ECOGUARD
           </Text>
 
           <Text style={styles.stationSubtitle}>
-            Uma estaÃ§Ã£o de monitoramento ativa
+            Uma estação de monitoramento ativa
           </Text>
         </View>
 
@@ -620,7 +620,7 @@ export default function Historico() {
           <Text
             style={styles.stationOnlineText}
           >
-            ÃšNICA
+            ÚNICA
           </Text>
         </View>
       </View>
@@ -657,13 +657,13 @@ export default function Historico() {
 
           <View style={{ flex: 1 }}>
             <Text style={styles.exportTitle}>
-              Exportar laudo tÃ©cnico
+              Exportar laudo técnico
             </Text>
 
             <Text
               style={styles.exportSubtitle}
             >
-              Enviar relatÃ³rio pelo WhatsApp
+              Enviar relatório pelo WhatsApp
             </Text>
           </View>
 
@@ -702,17 +702,17 @@ export default function Historico() {
         {(
           [
             'TODOS',
-            'CRÃTICO',
-            'ATENÃ‡ÃƒO',
+            'CRÍTICO',
+            'ATENÇÃO',
             'SEGURO',
           ] as Filtro[]
         ).map((item) => {
           const ativo = filtro === item;
 
           const cor =
-            item === 'CRÃTICO'
+            item === 'CRÍTICO'
               ? '#EF4444'
-              : item === 'ATENÃ‡ÃƒO'
+              : item === 'ATENÇÃO'
               ? '#F59E0B'
               : item === 'SEGURO'
               ? '#22C55E'
@@ -777,7 +777,7 @@ export default function Historico() {
           </Text>
 
           <Text style={styles.emptyText}>
-            NÃ£o existem registros para o filtro
+            Não existem registros para o filtro
             selecionado.
           </Text>
         </View>
@@ -800,7 +800,7 @@ export default function Historico() {
                   },
                 ]}
               >
-                {/* CABEÃ‡ALHO */}
+                {/* CABEÇALHO */}
 
                 <View
                   style={styles.readingHeader}
@@ -902,7 +902,7 @@ export default function Historico() {
                         styles.sensorBoxLabel
                       }
                     >
-                      FumaÃ§a
+                      Fumaça
                     </Text>
 
                     <Text
@@ -974,12 +974,12 @@ export default function Historico() {
                         styles.sensorBoxValue
                       }
                     >
-                      {item.temperatura}Â°C
+                      {item.temperatura}°C
                     </Text>
                   </View>
                 </View>
 
-                {/* BARRA DE FUMAÃ‡A */}
+                {/* BARRA DE FUMAÇA */}
 
                 <View
                   style={styles.smokeHeader}
@@ -987,7 +987,7 @@ export default function Historico() {
                   <Text
                     style={styles.smokeLabel}
                   >
-                    Intensidade da fumaÃ§a
+                    Intensidade da fumaça
                   </Text>
 
                   <Text
@@ -1028,7 +1028,7 @@ export default function Historico() {
         )
       )}
 
-      {/* RODAPÃ‰ */}
+      {/* RODAPÉ */}
 
       <View style={styles.footer}>
         <MaterialIcons

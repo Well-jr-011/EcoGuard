@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "EcoGuard",
     "slug": "EcoGuard",
@@ -45,16 +45,15 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": false,
-      "baseUrl": "/EcoGuard"
+      "reactCompiler": false
     },
     "extra": {
       "router": {},
       "eas": {
         "projectId": "01ab603d-e0fa-4262-ac20-92315df5d694"
       }
-    }
+    },
+    "owner": "weltn10"
   }
 }
-
 

@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../src/lib/supabase';
 
 // =====================================================
-// CONFIGURAÃ‡ÃƒO
+// CONFIGURAÇÃO
 // =====================================================
 
 const TEMPO_MAXIMO_OFFLINE = 15000;
@@ -54,7 +54,7 @@ export default function Home() {
   const isDesktop = width >= 900;
 
   // =====================================================
-  // INICIALIZAÃ‡ÃƒO + REALTIME
+  // INICIALIZAÇÃO + REALTIME
   // =====================================================
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function Home() {
         },
         (payload) => {
           console.log(
-            'ðŸ“¡ NOVA LEITURA DA ESTAÃ‡ÃƒO:',
+            '📡 NOVA LEITURA DA ESTAÇÃO:',
             payload.new
           );
 
@@ -88,13 +88,13 @@ export default function Home() {
       )
       .subscribe((status) => {
         console.log(
-          'ðŸ“¡ Status Realtime:',
+          '📡 Status Realtime:',
           status
         );
 
         if (status === 'SUBSCRIBED') {
           console.log(
-            'ðŸ“¡ Realtime conectado. Aguardando leitura do ESP8266...'
+            '📡 Realtime conectado. Aguardando leitura do ESP8266...'
           );
         }
 
@@ -104,13 +104,13 @@ export default function Home() {
           status === 'CLOSED'
         ) {
           console.log(
-            'âŒ Realtime indisponÃ­vel.'
+            '❌ Realtime indisponível.'
           );
         }
       });
 
     // ===================================================
-    // VERIFICAR CONEXÃƒO DO ESP8266
+    // VERIFICAR CONEXÃO DO ESP8266
     // ===================================================
 
     const verificarConexao = setInterval(() => {
@@ -129,7 +129,7 @@ export default function Home() {
 
         if (!Number.isFinite(tempoDaLeitura)) {
           console.log(
-            'âš ï¸ Data da leitura invÃ¡lida.'
+            '⚠️ Data da leitura inválida.'
           );
 
           setConectado(false);
@@ -148,7 +148,7 @@ export default function Home() {
 
         if (!estaOnline) {
           console.log(
-            'ðŸ”´ ESP8266 considerado OFFLINE.',
+            '🔴 ESP8266 considerado OFFLINE.',
             `${Math.round(
               idadeDaLeitura / 1000
             )} segundos sem leitura.`
@@ -170,7 +170,7 @@ export default function Home() {
   }, []);
 
   // =====================================================
-  // CARREGAR ÃšLTIMA LEITURA
+  // CARREGAR ÚLTIMA LEITURA
   // =====================================================
 
   async function carregarUltimaLeitura(
@@ -226,7 +226,7 @@ export default function Home() {
 
       if (!Number.isFinite(tempoDaLeitura)) {
         console.log(
-          'âš ï¸ Leitura encontrada, mas a data Ã© invÃ¡lida.'
+          '⚠️ Leitura encontrada, mas a data é inválida.'
         );
 
         setConectado(false);
@@ -243,12 +243,12 @@ export default function Home() {
       setConectado(estaOnline);
 
       console.log(
-        'ðŸ“Š Ãšltima leitura:',
+        '📊 Última leitura:',
         leitura
       );
 
       console.log(
-        'â±ï¸ Idade da leitura:',
+        '⏱️ Idade da leitura:',
         Math.round(
           idadeDaLeitura / 1000
         ),
@@ -257,12 +257,12 @@ export default function Home() {
 
       console.log(
         estaOnline
-          ? 'ðŸŸ¢ ESP8266 ONLINE'
-          : 'ðŸ”´ ESP8266 OFFLINE'
+          ? '🟢 ESP8266 ONLINE'
+          : '🔴 ESP8266 OFFLINE'
       );
     } catch (error) {
       console.log(
-        'âŒ Erro ao carregar leitura:',
+        '❌ Erro ao carregar leitura:',
         error
       );
 
@@ -347,14 +347,14 @@ export default function Home() {
       fumaca >= 70 ||
       temperatura >= 60
     ) {
-      return 'CRÃTICO';
+      return 'CRÍTICO';
     }
 
     if (
       fumaca >= 40 ||
       temperatura >= 40
     ) {
-      return 'ATENÃ‡ÃƒO';
+      return 'ATENÇÃO';
     }
 
     return 'SEGURO';
@@ -463,7 +463,7 @@ export default function Home() {
                 <Text
                   style={styles.subtitle}
                 >
-                  PrevenÃ§Ã£o de queimadas
+                  Prevenção de queimadas
                 </Text>
               </View>
             </View>
@@ -629,7 +629,7 @@ export default function Home() {
               <Text
                 style={styles.statusSmallLabel}
               >
-                SITUAÃ‡ÃƒO ATUAL
+                SITUAÇÃO ATUAL
               </Text>
 
               <Text
@@ -690,7 +690,7 @@ export default function Home() {
                 }
               >
                 O sensor identificou uma
-                possÃ­vel chama no ambiente
+                possível chama no ambiente
                 monitorado.
               </Text>
             </View>
@@ -731,7 +731,7 @@ export default function Home() {
                   styles.stationMiniText
                 }
               >
-                ESTAÃ‡ÃƒO 01
+                ESTAÇÃO 01
               </Text>
             </View>
           </View>
@@ -746,11 +746,11 @@ export default function Home() {
             >
               <SensorCard
                 icon="cloud"
-                title="FumaÃ§a"
+                title="Fumaça"
                 value={`${formatarNumero(
                   ultimaLeitura.valor_fumaca
                 )}%`}
-                description="NÃ­vel detectado"
+                description="Nível detectado"
                 color={
                   ultimaLeitura
                     .valor_fumaca >= 70
@@ -774,7 +774,7 @@ export default function Home() {
                 title="Temperatura"
                 value={`${formatarNumero(
                   ultimaLeitura.temperatura
-                )}Â°C`}
+                )}°C`}
                 description="Temperatura atual"
                 color={
                   ultimaLeitura
@@ -824,7 +824,7 @@ export default function Home() {
                 }
                 description={
                   ultimaLeitura.fogo
-                    ? 'AtenÃ§Ã£o imediata'
+                    ? 'Atenção imediata'
                     : 'Nenhuma chama detectada'
                 }
                 color={
@@ -864,14 +864,14 @@ export default function Home() {
               <Text
                 style={styles.emptyText}
               >
-                O ESP8266 ainda nÃ£o enviou
+                O ESP8266 ainda não enviou
                 dados para o EcoGuard.
               </Text>
             </View>
           )}
         </View>
 
-        {/* ÃšLTIMA ATUALIZAÃ‡ÃƒO */}
+        {/* ÚLTIMA ATUALIZAÇÃO */}
 
         {ultimaLeitura && (
           <View
@@ -893,7 +893,7 @@ export default function Home() {
               <Text
                 style={styles.updateTitle}
               >
-                Ãšltima leitura recebida
+                Última leitura recebida
               </Text>
 
               <Text
@@ -947,7 +947,7 @@ export default function Home() {
           </View>
         )}
 
-        {/* RODAPÃ‰ */}
+        {/* RODAPÉ */}
 
         <View
           style={styles.footerInfo}
@@ -962,7 +962,7 @@ export default function Home() {
             style={styles.footerText}
           >
             O EcoGuard monitora continuamente
-            as condiÃ§Ãµes ambientais da estaÃ§Ã£o.
+            as condições ambientais da estação.
           </Text>
         </View>
       </View>
@@ -1091,7 +1091,7 @@ function SensorCard({
 }
 
 // =====================================================
-// FORMATAÃ‡ÃƒO
+// FORMATAÇÃO
 // =====================================================
 
 function formatarNumero(
@@ -1119,7 +1119,7 @@ function formatarData(
       dataConvertida.getTime()
     )
   ) {
-    return 'Data indisponÃ­vel';
+    return 'Data indisponível';
   }
 
   return dataConvertida.toLocaleString(
@@ -1143,14 +1143,14 @@ function obterCorStatus(
   status: string
 ) {
   if (
-    status === 'CRÃTICO' ||
+    status === 'CRÍTICO' ||
     status === 'CRITICO'
   ) {
     return '#EF4444';
   }
 
   if (
-    status === 'ATENÃ‡ÃƒO' ||
+    status === 'ATENÇÃO' ||
     status === 'ATENCAO'
   ) {
     return '#F59E0B';
@@ -1169,14 +1169,14 @@ function obterIconeStatus(
   status: string
 ) {
   if (
-    status === 'CRÃTICO' ||
+    status === 'CRÍTICO' ||
     status === 'CRITICO'
   ) {
     return 'warning';
   }
 
   if (
-    status === 'ATENÃ‡ÃƒO' ||
+    status === 'ATENÇÃO' ||
     status === 'ATENCAO'
   ) {
     return 'report-problem';
@@ -1195,26 +1195,26 @@ function obterDescricaoStatus(
   status: string
 ) {
   if (
-    status === 'CRÃTICO' ||
+    status === 'CRÍTICO' ||
     status === 'CRITICO'
   ) {
-    return 'Foi identificado um risco crÃ­tico. Verifique o ambiente imediatamente.';
+    return 'Foi identificado um risco crítico. Verifique o ambiente imediatamente.';
   }
 
   if (
-    status === 'ATENÃ‡ÃƒO' ||
+    status === 'ATENÇÃO' ||
     status === 'ATENCAO'
   ) {
-    return 'Os sensores identificaram condiÃ§Ãµes que merecem atenÃ§Ã£o.';
+    return 'Os sensores identificaram condições que merecem atenção.';
   }
 
   if (
     status === 'SEM LEITURA'
   ) {
-    return 'Ainda nÃ£o foi recebida nenhuma leitura da estaÃ§Ã£o de monitoramento.';
+    return 'Ainda não foi recebida nenhuma leitura da estação de monitoramento.';
   }
 
-  return 'As condiÃ§Ãµes monitoradas estÃ£o dentro dos nÃ­veis seguros.';
+  return 'As condições monitoradas estão dentro dos níveis seguros.';
 }
 
 // =====================================================
@@ -1345,7 +1345,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // SEÃ‡Ã•ES
+  // SEÇÕES
   // ===================================================
 
   section: {
@@ -1640,7 +1640,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // ATUALIZAÃ‡ÃƒO
+  // ATUALIZAÇÃO
   // ===================================================
 
   updateCard: {
@@ -1702,7 +1702,7 @@ const styles = StyleSheet.create({
   },
 
   // ===================================================
-  // RODAPÃ‰
+  // RODAPÉ
   // ===================================================
 
   footerInfo: {
@@ -1721,7 +1721,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
-
-
-
